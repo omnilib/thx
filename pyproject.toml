@@ -1,0 +1,30 @@
+[build-system]
+requires = ["flit_core >=3,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "thx"
+author = "John Reese"
+author-email = "john@noswap.com"
+description-file = "README.md"
+home-page = "https://github.com/jreese/thx"
+requires = []
+requires-python = ">=3.6"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+[tool.flit.sdist]
+exclude = [
+    ".github/",
+]
+
+[tool.attribution]
+name = "thx"
+package = "thx"
+version_file = true
+signed_tags = false
+
