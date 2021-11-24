@@ -82,7 +82,7 @@ html_sidebars = {
         "navigation.html",
         "relations.html",
         "searchbox.html",
-        "omnilib.html",
+        # "omnilib.html",
     ],
 }
 
