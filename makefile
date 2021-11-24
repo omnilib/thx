@@ -25,15 +25,13 @@ lint:
 	python -m ufmt check $(SRCS)
 
 test:
-	python -m coverage run -m $(SRCS).tests
-	python -m coverage report
-	python -m coverage html
+	python -m unittest -v $(SRCS).tests
 
-html: .venv README.md docs/*.rst docs/conf.py
+html: .venv README.rst docs/*.rst docs/conf.py
 	source .venv/bin/activate && sphinx-build -b html docs html
 
 clean:
-	rm -rf build dist README MANIFEST *.egg-info .mypy_cache
+	rm -rf build dist html *.egg-info .mypy_cache
 
 distclean: clean
 	rm -rf .venv

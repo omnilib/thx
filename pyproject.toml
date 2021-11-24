@@ -6,9 +6,9 @@ build-backend = "flit_core.buildapi"
 module = "thx"
 author = "John Reese"
 author-email = "john@noswap.com"
-description-file = "README.md"
+description-file = "README.rst"
 home-page = "https://github.com/jreese/thx"
-requires = []
+requires = ["tomli >= 1.0"]
 requires-python = ">=3.6"
 classifiers = [
     "Intended Audience :: Developers",
@@ -21,6 +21,9 @@ classifiers = [
 exclude = [
     ".github/",
 ]
+
+[tool.flit.scripts]
+thx = "thx.main:main"
 
 [tool.attribution]
 name = "thx"
