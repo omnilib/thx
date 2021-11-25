@@ -20,12 +20,12 @@ format:
 	python -m ufmt format $(SRCS)
 
 lint:
-	python -m mypy $(SRCS)
 	python -m flake8 $(SRCS)
 	python -m ufmt check $(SRCS)
 
 test:
 	python -m unittest -v $(SRCS).tests
+	python -m mypy --install-types --non-interactive $(SRCS)
 
 html: .venv README.rst docs/*.rst docs/conf.py
 	source .venv/bin/activate && sphinx-build -b html docs html
