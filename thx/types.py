@@ -28,3 +28,15 @@ class Config:
 
     def __post_init__(self):
         self.default = tuple(d.casefold() for d in self.default)
+
+
+@dataclass
+class Result:
+    command: Sequence[str]
+    exit_code: int
+    stdout: str
+    stderr: str
+
+    @property
+    def success(self) -> bool:
+        return self.exit_code == 0

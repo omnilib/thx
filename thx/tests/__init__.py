@@ -2,3 +2,4 @@
 # Licensed under the MIT License
 
 from .config import ConfigTest
+from .runner import RunnerTest
