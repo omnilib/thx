@@ -2,12 +2,11 @@
 # Licensed under the MIT License
 
 import asyncio
-from asyncio.subprocess import PIPE
 import shlex
 import shutil
+from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-import subprocess
-from typing import Sequence, Dict, Any, Optional, Generator, List
+from typing import Sequence, Any, Generator, List
 
 from .types import Config, Command, Result
 
@@ -35,9 +34,7 @@ class Job:
         return self.run().__await__()
 
     async def run(self) -> Result:
-        proc = await asyncio.create_subprocess_exec(
-            *self.cmd, stdout=PIPE, stderr=PIPE
-        )
+        proc = await asyncio.create_subprocess_exec(*self.cmd, stdout=PIPE, stderr=PIPE)
         stdout, stderr = await proc.communicate()
         assert proc.returncode is not None
 
