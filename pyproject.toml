@@ -34,3 +34,13 @@ package = "thx"
 version_file = true
 signed_tags = false
 
+[tool.coverage.run]
+branch = true
+include = ["thx/*"]
+omit = ["thx/tests/*"]
+
+[tool.coverage.report]
+fail_under = 90
+precision = 1
+show_missing = true
+skip_covered = true

@@ -24,7 +24,8 @@ lint:
 	python -m ufmt check $(SRCS)
 
 test:
-	python -m unittest -v $(SRCS).tests
+	python -m coverage run -m $(SRCS).tests
+	python -m coverage report
 	python -m mypy --install-types --non-interactive $(SRCS)
 
 html: .venv README.rst docs/*.rst docs/conf.py
