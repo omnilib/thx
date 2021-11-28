@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 import asyncio
+import sys
 from functools import wraps
 from typing import Callable, Any, TypeVar
 from unittest import TestCase
@@ -14,14 +15,22 @@ T = TypeVar("T")
 
 
 def async_test(fn: Callable[..., T]) -> Callable[..., T]:
-    @wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> T:
-        try:
-            loop = asyncio.new_event_loop()
+    if sys.version_info < (3, 7):
+        # Python 3.6 only allows creating async subprocess from the default event loop
+        @wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> T:
+            loop = asyncio.get_event_loop()
             return loop.run_until_complete(fn(*args, **kwargs))  # type: ignore
-        finally:
-            loop.stop()
-            loop.close()
+
+    else:
+        @wraps(fn)
+        def wrapper(*args: Any, **kwargs: Any) -> T:
+            try:
+                loop = asyncio.new_event_loop()
+                return loop.run_until_complete(fn(*args, **kwargs))  # type: ignore
+            finally:
+                loop.stop()
+                loop.close()
 
     return wrapper
 
