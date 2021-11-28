@@ -47,6 +47,7 @@ skip_covered = true
 
 [tool.mypy]
 strict = true
+ignore_missing_imports = true
 
 [tool.thx]
 # default = ["test", "lint"]
