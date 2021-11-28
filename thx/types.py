@@ -10,7 +10,7 @@ class ConfigError(ValueError):
 
 
 @dataclass
-class Command:
+class Job:
     name: str
     run: Sequence[str]
     requires: Sequence[str] = ()
@@ -22,7 +22,7 @@ class Command:
 
 @dataclass
 class Config:
-    commands: Mapping[str, Command] = field(default_factory=dict)
+    jobs: Mapping[str, Job] = field(default_factory=dict)
     default: Sequence[str] = field(default_factory=list)
     values: Mapping[str, str] = field(default_factory=dict)
 

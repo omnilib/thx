@@ -27,9 +27,9 @@ Goals
 
     -- author
 
-`thx` should be capable of running one or more commands, configured via simple and
-obvious options in the PEP 517 standardized `pyproject.toml`.  Commands are simple
-strings, or lists of strings, each representing a program to be run, with basic
+`thx` should be capable of running one or more jobs or commands, configured via simple
+and obvious options in the PEP 517 standardized `pyproject.toml`. Jobs are defined as
+simple strings, or lists of strings, each representing a command to be run, with basic
 interpolation of values.
 
 .. code-block:: toml
@@ -38,7 +38,7 @@ interpolation of values.
     default = ["lint", "test"]
     module = "thx"
 
-    [tool.thx.commands]
+    [tool.thx.jobs]
     lint = [
         "flake8 {module}",
         "ufmt check {module}",
@@ -59,7 +59,7 @@ replacement of ``{module}`` with ``thx``:
     $ thx test
     > python -m unittest thx.tests
 
-Without a command, ``thx`` will run the configured list of default commands:
+Without a command, ``thx`` will run the configured list of default jobs:
 
 .. code-block:: shell-session
 
@@ -67,6 +67,22 @@ Without a command, ``thx`` will run the configured list of default commands:
     > flake8 thx
     > ufmt check thx
     > python -m unittest thx.tests
+
+
+Terminology
+-----------
+
+* `command` refers to an individual program executed by `thx` as a subprocess,
+  including any rendered template values. An example command could include running unit
+  tests via ``python -m unittest thx``.
+
+* `step` refers to a pending command, before any template values are rendered, and
+  includes the configuration, environment, and any other values that may affect the
+  final program and arguments that will be executed.
+
+* `job` refers to a named job, consisting of one or more steps, and a list of any other
+  jobs that must be completed before this job can begin (`"requires"`). These are the
+  primary unit defined in the project's ``pyproject.toml``.
 
 
 Install

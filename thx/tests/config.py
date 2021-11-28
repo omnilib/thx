@@ -8,7 +8,7 @@ from textwrap import dedent
 from typing import Optional, Iterator
 from unittest import TestCase
 
-from ..config import Config, Command, ConfigError, load_config
+from ..config import Config, Job, ConfigError, load_config
 
 
 @contextmanager
@@ -68,15 +68,13 @@ class ConfigTest(TestCase):
         with fake_pyproject(
             """
             [tool.thx]
-            commands = {hello = "echo hello"}
+            jobs = {hello = "echo hello"}
 
             [tool.black]
             line_length = 37
             """
         ) as td:
-            expected = Config(
-                commands={"hello": Command(name="hello", run=["echo hello"])}
-            )
+            expected = Config(jobs={"hello": Job(name="hello", run=["echo hello"])})
             result = load_config(td)
             self.assertEqual(expected, result)
 
@@ -87,16 +85,16 @@ class ConfigTest(TestCase):
             default = "hello"
             module = "foobar"
 
-            [tool.thx.commands]
+            [tool.thx.jobs]
             hello = ["echo hello"]
             lint = ["flake8 {module}", "black --check {module}"]
             """
         ) as td:
             expected = Config(
                 default=["hello"],
-                commands={
-                    "hello": Command(name="hello", run=["echo hello"]),
-                    "lint": Command(
+                jobs={
+                    "hello": Job(name="hello", run=["echo hello"]),
+                    "lint": Job(
                         name="lint", run=["flake8 {module}", "black --check {module}"]
                     ),
                 },
@@ -112,7 +110,7 @@ class ConfigTest(TestCase):
             default = ["test", "lint"]
             module = "foobar"
 
-            [tool.thx.commands]
+            [tool.thx.jobs]
             format = ["black {module}"]
             lint = ["flake8 {module}", "black --check {module}"]
             test = [
@@ -120,39 +118,39 @@ class ConfigTest(TestCase):
                 "mypy {module}",
             ]
 
-            [tool.thx.commands.publish]
+            [tool.thx.jobs.publish]
             requires = ["test", "lint"]
             run = ["flit publish"]
             """
         ) as td:
             expected = Config(
                 default=["test", "lint"],
-                commands={
-                    "format": Command(name="format", run=["black {module}"]),
-                    "lint": Command(
+                jobs={
+                    "format": Job(name="format", run=["black {module}"]),
+                    "lint": Job(
                         name="lint", run=["flake8 {module}", "black --check {module}"]
                     ),
-                    "test": Command(
+                    "test": Job(
                         name="test",
                         run=["python -m unittest {module}", "mypy {module}"],
                     ),
-                    "publish": Command(
+                    "publish": Job(
                         name="publish", run=["flit publish"], requires=["test", "lint"]
                     ),
                 },
                 values={"module": "foobar"},
             )
             result = load_config(td)
-            self.assertDictEqual(expected.commands, result.commands)
+            self.assertDictEqual(expected.jobs, result.jobs)
             self.assertDictEqual(expected.values, result.values)
             self.assertEqual(expected, result)
 
-    def test_bad_value_commands(self):
-        with self.assertRaisesRegex(ConfigError, "tool.thx.commands"):
+    def test_bad_value_jobs(self):
+        with self.assertRaisesRegex(ConfigError, "tool.thx.jobs"):
             with fake_pyproject(
                 """
                 [tool.thx]
-                commands = ["foo", "bar"]
+                jobs = ["foo", "bar"]
                 """
             ) as td:
                 load_config(td)
@@ -168,27 +166,27 @@ class ConfigTest(TestCase):
                 load_config(td)
 
     def test_bad_value_requires(self):
-        with self.assertRaisesRegex(ConfigError, "tool.thx.commands.foo.requires"):
+        with self.assertRaisesRegex(ConfigError, "tool.thx.jobs.foo.requires"):
             with fake_pyproject(
                 """
-                [tool.thx.commands.foo]
+                [tool.thx.jobs.foo]
                 requires = 1337
                 """
             ) as td:
                 load_config(td)
 
     def test_bad_value_run(self):
-        with self.assertRaisesRegex(ConfigError, "tool.thx.commands.foo.run"):
+        with self.assertRaisesRegex(ConfigError, "tool.thx.jobs.foo.run"):
             with fake_pyproject(
                 """
-                [tool.thx.commands.foo]
+                [tool.thx.jobs.foo]
                 run = [123, 234]
                 """
             ) as td:
                 load_config(td)
 
     def test_undefined_default(self):
-        with self.assertRaisesRegex(ConfigError, "default: undefined command 'foo'"):
+        with self.assertRaisesRegex(ConfigError, "default: undefined job 'foo'"):
             with fake_pyproject(
                 """
                 [tool.thx]
@@ -198,12 +196,10 @@ class ConfigTest(TestCase):
                 load_config(td)
 
     def test_undefined_requires(self):
-        with self.assertRaisesRegex(
-            ConfigError, "foo.requires: undefined command 'bar'"
-        ):
+        with self.assertRaisesRegex(ConfigError, "foo.requires: undefined job 'bar'"):
             with fake_pyproject(
                 """
-                [tool.thx.commands]
+                [tool.thx.jobs]
                 foo = {run="echo hello", requires="bar"}
                 """
             ) as td:

@@ -8,7 +8,7 @@ from asyncio.subprocess import PIPE
 from dataclasses import dataclass
 from typing import Sequence, Any, Generator, List
 
-from .types import Config, Command, Result
+from .types import Config, Job, Result
 
 
 def which(name: str, config: Config) -> str:
@@ -26,7 +26,7 @@ def render_command(run: str, config: Config) -> Sequence[str]:
 
 
 @dataclass
-class Job:
+class Step:
     cmd: Sequence[str]
     config: Config
 
@@ -46,11 +46,11 @@ class Job:
         )
 
 
-def prepare_command(command: Command, config: Config) -> Sequence[Job]:
-    tasks: List[Job] = []
+def prepare_job(job: Job, config: Config) -> Sequence[Step]:
+    tasks: List[Step] = []
 
-    for item in command.run:
+    for item in job.run:
         cmd = render_command(item, config)
-        tasks.append(Job(cmd=cmd, config=config))
+        tasks.append(Step(cmd=cmd, config=config))
 
     return tasks

@@ -7,7 +7,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from .. import runner
-from ..types import Result, Command, Config
+from ..types import Result, Job, Config
 
 
 def async_test(fn):
@@ -50,19 +50,19 @@ class RunnerTest(TestCase):
             "flake8 {module}",
             "python -m {module}.tests",
         ]
-        command = Command(name="foo", run=run)
+        job = Job(name="foo", run=run)
 
         expected = [
-            runner.Job(cmd=["echo", "hello world"], config=config),
-            runner.Job(cmd=["flake8", "beta"], config=config),
-            runner.Job(cmd=["python", "-m", "beta.tests"], config=config),
+            runner.Step(cmd=["echo", "hello world"], config=config),
+            runner.Step(cmd=["flake8", "beta"], config=config),
+            runner.Step(cmd=["python", "-m", "beta.tests"], config=config),
         ]
-        result = runner.prepare_command(command, config)
+        result = runner.prepare_job(job, config)
         self.assertListEqual(expected, result)
 
     @async_test
     async def test_job_echo(self):
-        job = runner.Job(
+        job = runner.Step(
             ["echo", "hello world"],
             Config(),
         )

@@ -7,7 +7,7 @@ from typing import Optional, Any, List, Dict, Sequence, Mapping
 import tomli
 from trailrunner.core import project_root
 
-from .types import Command, Config, ConfigError
+from .types import Job, Config, ConfigError
 
 
 def ensure_dict(value: Any, key: str) -> Dict[str, Any]:
@@ -46,7 +46,7 @@ def ensure_listish(value: Any, key: str) -> List[str]:
     return result
 
 
-def parse_command(name: str, data: Dict[str, Any]) -> Command:
+def parse_job(name: str, data: Dict[str, Any]) -> Job:
     run: List[str]
     requires: List[str]
 
@@ -54,45 +54,45 @@ def parse_command(name: str, data: Dict[str, Any]) -> Command:
         run = [data]
         requires = ()
     elif isinstance(data, list):
-        run = ensure_listish(data, f"tool.thx.commands.{name}")
+        run = ensure_listish(data, f"tool.thx.jobs.{name}")
         requires = ()
     elif isinstance(data, dict):
-        run = ensure_listish(data.pop("run", None), f"tool.thx.commands.{name}.run")
+        run = ensure_listish(data.pop("run", None), f"tool.thx.jobs.{name}.run")
         requires = ensure_listish(
-            data.pop("requires", None), f"tool.thx.commands.{name}.requires"
+            data.pop("requires", None), f"tool.thx.jobs.{name}.requires"
         )
     else:
         raise ConfigError(
-            f"Command {name!r} must be string, list of strings, or dictionary; "
+            f"Job {name!r} must be string, list of strings, or dictionary; "
             f"{data!r} given"
         )
 
-    return Command(name=name, run=run, requires=requires)
+    return Job(name=name, run=run, requires=requires)
 
 
-def parse_commands(data: Any) -> List[Command]:
-    command_data = ensure_dict(data, "tool.thx.commands")
+def parse_jobs(data: Any) -> List[Job]:
+    job_data = ensure_dict(data, "tool.thx.jobs")
 
-    commands: List[Command] = []
-    for name, value in command_data.items():
+    jobs: List[Job] = []
+    for name, value in job_data.items():
         name = name.casefold()
-        commands.append(parse_command(name, value))
+        jobs.append(parse_job(name, value))
 
-    return commands
+    return jobs
 
 
 def validate_config(config: Config) -> Config:
     for name in config.default:
-        if name not in config.commands:
-            raise ConfigError(f"Option tool.thx.default: undefined command {name!r}")
+        if name not in config.jobs:
+            raise ConfigError(f"Option tool.thx.default: undefined job {name!r}")
 
-    for name, command in config.commands.items():
-        assert name == command.name
-        for require in command.requires:
-            if require not in config.commands:
+    for name, job in config.jobs.items():
+        assert name == job.name
+        for require in job.requires:
+            if require not in config.jobs:
                 raise ConfigError(
-                    f"Option tool.thx.commands.{name}.requires: "
-                    f"undefined command {require!r}"
+                    f"Option tool.thx.jobs.{name}.requires: "
+                    f"undefined job {require!r}"
                 )
 
     return config
@@ -112,10 +112,8 @@ def load_config(path: Optional[Path] = None) -> Config:
     data = tomli.loads(content).get("tool", {}).get("thx", {})
 
     default: List[str] = ensure_listish(data.pop("default", None), "tool.thx.default")
-    commands: List[Command] = parse_commands(data.pop("commands", {}))
+    jobs: List[Job] = parse_jobs(data.pop("jobs", {}))
 
     return validate_config(
-        Config(
-            default=default, commands={cmd.name: cmd for cmd in commands}, values=data
-        )
+        Config(default=default, jobs={cmd.name: cmd for cmd in jobs}, values=data)
     )
