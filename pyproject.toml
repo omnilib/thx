@@ -9,6 +9,7 @@ author-email = "john@noswap.com"
 description-file = "README.rst"
 home-page = "https://github.com/jreese/thx"
 requires = [
+    "dataclasses >= 0.8; python_version < '3.7'",
     "tomli >= 1.0",
     "trailrunner >= 1.1",
 ]
