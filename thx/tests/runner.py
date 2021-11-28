@@ -23,6 +23,7 @@ def async_test(fn: Callable[..., T]) -> Callable[..., T]:
             return loop.run_until_complete(fn(*args, **kwargs))  # type: ignore
 
     else:
+
         @wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> T:
             try:
