@@ -69,13 +69,8 @@ class RunnerTest(TestCase):
         )
         result = await job
         self.assertIsInstance(result, Result)
-        self.assertEqual(
-            Result(
-                command=["echo", "hello world"],
-                exit_code=0,
-                stdout="hello world\n",
-                stderr="",
-            ),
-            result,
-        )
+        self.assertEqual(["echo", "hello world"], result.command)
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("hello world", result.stdout.strip())
+        self.assertEqual("", result.stderr)
         self.assertTrue(result.success)
