@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 from dataclasses import dataclass, field
-from typing import Sequence, Mapping
+from typing import List, Sequence, Mapping
 
 
 class ConfigError(ValueError):
@@ -28,6 +28,14 @@ class Config:
 
     def __post_init__(self):
         self.default = tuple(d.casefold() for d in self.default)
+
+
+@dataclass
+class Options:
+    debug: bool = False
+    config: Config = field(default_factory=Config)
+    jobs: List[str] = field(default_factory=list)
+    exit: bool = False
 
 
 @dataclass

@@ -44,3 +44,21 @@ fail_under = 90
 precision = 1
 show_missing = true
 skip_covered = true
+
+[tool.thx]
+# default = ["test", "lint"]
+module = "thx"
+srcs = "thx"
+
+[tool.thx.jobs]
+html = ["sphinx-build -b html docs html"]
+format = ["python -m ufmt format {srcs}"]
+lint = [
+    "python -m flake8 {srcs}",
+    "python -m ufmt check {srcs}",
+]
+test = [
+    "python -m coverage run -m {module}.tests",
+    "python -m coverage report",
+    "python -m mypy --install-types --non-interactive -p {module}",
+]
