@@ -77,7 +77,7 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     job_names = options.jobs
     if not job_names:
         if options.config.default:
-            print(f"using {options.config.default=!r}")
+            print(f"using {options.config.default!r}")
             job_names.extend(options.config.default)
         else:
             ctx.invoke(list_commands)
