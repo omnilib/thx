@@ -8,7 +8,8 @@ from textwrap import dedent
 from typing import Optional, Iterator
 from unittest import TestCase
 
-from ..config import Config, Job, ConfigError, load_config
+from ..config import load_config
+from ..types import Config, ConfigError, Job
 
 
 @contextmanager
@@ -27,19 +28,19 @@ def fake_pyproject(content: Optional[str]) -> Iterator[Path]:
 class ConfigTest(TestCase):
     maxDiff = None
 
-    def test_no_pyproject(self):
+    def test_no_pyproject(self) -> None:
         with fake_pyproject(None) as td:
             expected = Config()
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_empty_pyproject(self):
+    def test_empty_pyproject(self) -> None:
         with fake_pyproject("") as td:
             expected = Config()
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_no_config(self):
+    def test_no_config(self) -> None:
         with fake_pyproject(
             """
             [tool.black]
@@ -50,7 +51,7 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_empty_config(self):
+    def test_empty_config(self) -> None:
         with fake_pyproject(
             """
             [tool.thx]
@@ -64,7 +65,7 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_tiny_config(self):
+    def test_tiny_config(self) -> None:
         with fake_pyproject(
             """
             [tool.thx]
@@ -78,7 +79,7 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_simple_config(self):
+    def test_simple_config(self) -> None:
         with fake_pyproject(
             """
             [tool.thx]
@@ -103,7 +104,7 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
-    def test_complex_config(self):
+    def test_complex_config(self) -> None:
         with fake_pyproject(
             """
             [tool.thx]
@@ -145,7 +146,7 @@ class ConfigTest(TestCase):
             self.assertDictEqual(expected.values, result.values)
             self.assertEqual(expected, result)
 
-    def test_bad_value_jobs(self):
+    def test_bad_value_jobs(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.jobs"):
             with fake_pyproject(
                 """
@@ -155,7 +156,7 @@ class ConfigTest(TestCase):
             ) as td:
                 load_config(td)
 
-    def test_bad_value_default(self):
+    def test_bad_value_default(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.default"):
             with fake_pyproject(
                 """
@@ -165,7 +166,7 @@ class ConfigTest(TestCase):
             ) as td:
                 load_config(td)
 
-    def test_bad_value_requires(self):
+    def test_bad_value_requires(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.jobs.foo.requires"):
             with fake_pyproject(
                 """
@@ -175,7 +176,7 @@ class ConfigTest(TestCase):
             ) as td:
                 load_config(td)
 
-    def test_bad_value_run(self):
+    def test_bad_value_run(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.jobs.foo.run"):
             with fake_pyproject(
                 """
@@ -185,7 +186,7 @@ class ConfigTest(TestCase):
             ) as td:
                 load_config(td)
 
-    def test_undefined_default(self):
+    def test_undefined_default(self) -> None:
         with self.assertRaisesRegex(ConfigError, "default: undefined job 'foo'"):
             with fake_pyproject(
                 """
@@ -195,7 +196,7 @@ class ConfigTest(TestCase):
             ) as td:
                 load_config(td)
 
-    def test_undefined_requires(self):
+    def test_undefined_requires(self) -> None:
         with self.assertRaisesRegex(ConfigError, "foo.requires: undefined job 'bar'"):
             with fake_pyproject(
                 """

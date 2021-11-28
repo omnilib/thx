@@ -26,7 +26,7 @@ lint:
 test:
 	python -m coverage run -m $(SRCS).tests
 	python -m coverage report
-	python -m mypy --install-types --non-interactive $(SRCS)
+	python -m mypy --install-types --non-interactive -p $(SRCS)
 
 html: .venv README.rst docs/*.rst docs/conf.py
 	source .venv/bin/activate && sphinx-build -b html docs html

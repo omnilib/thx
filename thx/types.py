@@ -15,7 +15,7 @@ class Job:
     run: Sequence[str]
     requires: Sequence[str] = ()
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.name = self.name.casefold()
         self.requires = tuple(r.casefold() for r in self.requires)
 
@@ -26,7 +26,7 @@ class Config:
     default: Sequence[str] = field(default_factory=list)
     values: Mapping[str, str] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)
 
 

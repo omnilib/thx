@@ -2,16 +2,17 @@
 # Licensed under the MIT License
 
 from functools import partial
-from typing import Sequence, Any
+from typing import Sequence, Any, List, Optional
 
 import click
 
-from . import __doc__, __version__
+from . import __doc__
+from .__version__ import __version__
 from .config import load_config
 from .types import Options
 
 
-def queue_job(name: str, ctx: click.Context):
+def queue_job(name: str, ctx: click.Context) -> None:
     """
     Add a job to the options queue
     """
@@ -24,17 +25,17 @@ class ThxGroup(click.Group):
     Generate click commands at runtime from configuration
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._config = load_config()
 
-    def list_commands(self, ctx: click.Context):
+    def list_commands(self, ctx: click.Context) -> List[str]:
         commands = super().list_commands(ctx)
         commands += [""]
         commands += self._config.jobs.keys()
         return commands
 
-    def create_command(self, name):
+    def create_command(self, name: str) -> Optional[click.Command]:
         if name == "":
             return click.Command("", help="", callback=lambda: True)
         if name in self._config.jobs:
@@ -46,7 +47,7 @@ class ThxGroup(click.Group):
             return click.Command(name, callback=cb, help=desc)
         return None
 
-    def get_command(self, ctx, name):
+    def get_command(self, ctx: click.Context, name: str) -> Optional[click.Command]:
         return super().get_command(ctx, name) or self.create_command(name)
 
 
@@ -54,7 +55,7 @@ class ThxGroup(click.Group):
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.version_option(__version__, "--version", "-V")
 @click.pass_context
-def main(ctx: click.Context, debug: bool):
+def main(ctx: click.Context, debug: bool) -> None:
     """
     Setup options and load config
     """
@@ -65,7 +66,7 @@ def main(ctx: click.Context, debug: bool):
 
 @main.result_callback()
 @click.pass_context
-def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any):
+def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -> None:
     """
     All click commands finished, start any jobs necessary
     """
@@ -86,7 +87,7 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any):
 
 @main.command("list")
 @click.pass_context
-def list_commands(ctx: click.Context):
+def list_commands(ctx: click.Context) -> None:
     """
     List available commands and exit.
     """

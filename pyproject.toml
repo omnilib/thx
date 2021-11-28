@@ -45,6 +45,9 @@ precision = 1
 show_missing = true
 skip_covered = true
 
+[tool.mypy]
+strict = true
+
 [tool.thx]
 # default = ["test", "lint"]
 module = "thx"
