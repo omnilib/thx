@@ -23,6 +23,7 @@ class ThxGroup(click.Group):
     """
     Generate click commands at runtime from configuration
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._config = load_config()
