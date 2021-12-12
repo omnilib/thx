@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 from functools import partial
-from typing import Sequence, Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 import click
 

@@ -6,7 +6,7 @@ import shlex
 import shutil
 from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-from typing import Sequence, Any, Generator, List
+from typing import Any, Generator, List, Sequence
 
 from .types import Config, Job, Result
 

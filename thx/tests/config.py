@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
-from typing import Optional, Iterator
+from typing import Iterator, Optional
 from unittest import TestCase
 
 from ..config import load_config

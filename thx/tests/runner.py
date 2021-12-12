@@ -3,12 +3,12 @@
 
 import asyncio
 from functools import wraps
-from typing import Callable, Any, TypeVar
+from typing import Any, Callable, TypeVar
 from unittest import TestCase
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 from .. import runner
-from ..types import Result, Job, Config
+from ..types import Config, Job, Result
 
 T = TypeVar("T")
 

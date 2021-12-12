@@ -2,12 +2,12 @@
 # Licensed under the MIT License
 
 from pathlib import Path
-from typing import Optional, Any, List, Dict, Sequence, Mapping
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import tomli
 from trailrunner.core import project_root
 
-from .types import Job, Config, ConfigError
+from .types import Config, ConfigError, Job
 
 
 def ensure_dict(value: Any, key: str) -> Dict[str, Any]:
