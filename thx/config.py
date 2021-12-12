@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import tomli
+from packaging.version import Version
 from trailrunner.core import project_root
 
 from .types import Config, ConfigError, Job
@@ -101,19 +102,34 @@ def validate_config(config: Config) -> Config:
 def load_config(path: Optional[Path] = None) -> Config:
     if path is None:
         path = Path.cwd()
+    path = path.resolve()
 
     root = project_root(path)
     pyproject = root / "pyproject.toml"
 
     if not pyproject.is_file():
-        return Config()
+        return Config(root=path)
 
     content = pyproject.read_text()
     data = tomli.loads(content).get("tool", {}).get("thx", {})
 
     default: List[str] = ensure_listish(data.pop("default", None), "tool.thx.default")
     jobs: List[Job] = parse_jobs(data.pop("jobs", {}))
+    versions: List[Version] = sorted(
+        set(
+            Version(v)
+            for v in ensure_listish(
+                data.pop("python_versions", None), "tool.thx.python_versions"
+            )
+        )
+    )
 
     return validate_config(
-        Config(default=default, jobs={cmd.name: cmd for cmd in jobs}, values=data)
+        Config(
+            root=root,
+            default=default,
+            jobs={cmd.name: cmd for cmd in jobs},
+            values=data,
+            versions=versions,
+        )
     )

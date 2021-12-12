@@ -30,14 +30,16 @@ class ConfigTest(TestCase):
 
     def test_no_pyproject(self) -> None:
         with fake_pyproject(None) as td:
-            expected = Config()
+            expected = Config(root=Path(td).resolve())
             result = load_config(td)
+            self.assertEqual(expected.root, result.root)
             self.assertEqual(expected, result)
 
     def test_empty_pyproject(self) -> None:
         with fake_pyproject("") as td:
-            expected = Config()
+            expected = Config(root=Path(td).resolve())
             result = load_config(td)
+            self.assertEqual(expected.root, result.root)
             self.assertEqual(expected, result)
 
     def test_no_config(self) -> None:
@@ -47,7 +49,7 @@ class ConfigTest(TestCase):
             line_length = 37
             """
         ) as td:
-            expected = Config()
+            expected = Config(root=Path(td).resolve())
             result = load_config(td)
             self.assertEqual(expected, result)
 
@@ -61,7 +63,7 @@ class ConfigTest(TestCase):
             line_length = 37
             """
         ) as td:
-            expected = Config()
+            expected = Config(root=Path(td).resolve())
             result = load_config(td)
             self.assertEqual(expected, result)
 
@@ -75,7 +77,10 @@ class ConfigTest(TestCase):
             line_length = 37
             """
         ) as td:
-            expected = Config(jobs={"hello": Job(name="hello", run=["echo hello"])})
+            expected = Config(
+                root=Path(td).resolve(),
+                jobs={"hello": Job(name="hello", run=["echo hello"])},
+            )
             result = load_config(td)
             self.assertEqual(expected, result)
 
@@ -92,6 +97,7 @@ class ConfigTest(TestCase):
             """
         ) as td:
             expected = Config(
+                root=Path(td).resolve(),
                 default=["hello"],
                 jobs={
                     "hello": Job(name="hello", run=["echo hello"]),
@@ -125,6 +131,7 @@ class ConfigTest(TestCase):
             """
         ) as td:
             expected = Config(
+                root=Path(td).resolve(),
                 default=["test", "lint"],
                 jobs={
                     "format": Job(name="format", run=["black {module}"]),

@@ -2,7 +2,21 @@
 # Licensed under the MIT License
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Mapping, Sequence
+
+from packaging.version import Version
+
+
+__all__ = [
+    "Config",
+    "ConfigError",
+    "Context",
+    "Job",
+    "Options",
+    "Result",
+    "Version",
+]
 
 
 class ConfigError(ValueError):
@@ -22,12 +36,22 @@ class Job:
 
 @dataclass
 class Config:
+    root: Path = field(default_factory=Path.cwd)
     jobs: Mapping[str, Job] = field(default_factory=dict)
     default: Sequence[str] = field(default_factory=list)
     values: Mapping[str, str] = field(default_factory=dict)
+    versions: Sequence[Version] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)
+
+
+@dataclass
+class Context:
+    python_version: Version
+    python_path: Path
+    venv: Path
+    live: bool = False
 
 
 @dataclass
