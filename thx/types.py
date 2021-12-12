@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 from dataclasses import dataclass, field
-from typing import List, Sequence, Mapping
+from typing import List, Mapping, Sequence
 
 
 class ConfigError(ValueError):
