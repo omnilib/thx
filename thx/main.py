@@ -1,14 +1,19 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import logging
+import sys
 from functools import partial
 from typing import Any, List, Optional, Sequence
 
 import click
 
+from thx.context import resolve_contexts
 from . import __doc__
 from .__version__ import __version__
 from .config import load_config
+
+from .core import resolve_jobs, run
 from .types import Options
 
 
@@ -63,6 +68,18 @@ def main(ctx: click.Context, debug: bool) -> None:
     ctx.obj.debug = debug
     ctx.obj.config = load_config()
 
+    log_format = (
+        "%(levelname)s %(module)s:%(lineno)d: %(message)s"
+        if debug
+        else "%(levelname)s: %(message)s"
+    )
+
+    logging.basicConfig(
+        stream=sys.stderr,
+        level=logging.DEBUG if debug else logging.WARNING,
+        format=log_format,
+    )
+
 
 @main.result_callback()
 @click.pass_context
@@ -74,15 +91,22 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if options.exit:
         return
 
+    config = options.config
+
+    contexts = resolve_contexts(config)
+    print(f"runtimes: {[str(ctx.python_version) for ctx in contexts]}")
+
     job_names = options.jobs
     if not job_names:
-        if options.config.default:
-            print(f"using {options.config.default!r}")
-            job_names.extend(options.config.default)
+        if config.default:
+            job_names.extend(config.default)
         else:
             ctx.invoke(list_commands)
             ctx.exit(1)
+
     print(f"will run: {job_names!r}")
+    jobs = resolve_jobs(job_names, config)
+    run(jobs, contexts, config)
 
 
 @main.command("list")

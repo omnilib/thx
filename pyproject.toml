@@ -51,9 +51,10 @@ strict = true
 ignore_missing_imports = true
 
 [tool.thx]
-# default = ["test", "lint"]
+default = ["test", "lint"]
 module = "thx"
 srcs = "thx"
+python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
 
 [tool.thx.jobs]
 html = ["sphinx-build -b html docs html"]

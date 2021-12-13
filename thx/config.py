@@ -123,6 +123,9 @@ def load_config(path: Optional[Path] = None) -> Config:
             )
         )
     )
+    requirements: List[str] = ensure_listish(
+        data.pop("requirements", None), "tool.thx.requirements"
+    )
 
     return validate_config(
         Config(
@@ -131,5 +134,6 @@ def load_config(path: Optional[Path] = None) -> Config:
             jobs={cmd.name: cmd for cmd in jobs},
             values=data,
             versions=versions,
+            requirements=requirements,
         )
     )

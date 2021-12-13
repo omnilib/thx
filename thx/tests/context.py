@@ -5,12 +5,14 @@ import platform
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Optional, Sequence
 from unittest import TestCase
 from unittest.mock import call, Mock, patch
 
+from thx.tests.helper import async_test
+
 from .. import context
-from ..types import Config, Context, Version
+from ..types import CommandResult, Config, Context, StrPath, Version
 
 TEST_VERSIONS = [
     Version(v) for v in ("3.5", "3.8", "3.8.10", "3.10.42", "4.0", "4.128.1337")
@@ -81,7 +83,7 @@ class ContextTest(TestCase):
             "running `%s -V` gave unexpected version string: %s", binary, fake_output
         )
 
-    @patch("thx.context.which")
+    @patch("thx.context.shutil.which")
     @patch("thx.context.runtime_version")
     def test_find_runtime_no_venv_binary_found(
         self, runtime_mock: Mock, which_mock: Mock
@@ -116,7 +118,7 @@ class ContextTest(TestCase):
                         Path(f"/fake/bin/python{version.major}")
                     )
 
-    @patch("thx.context.which")
+    @patch("thx.context.shutil.which")
     @patch("thx.context.runtime_version")
     def test_find_runtime_no_venv_no_binary(
         self, runtime_mock: Mock, which_mock: Mock
@@ -147,7 +149,7 @@ class ContextTest(TestCase):
                     )
                     runtime_mock.assert_not_called()
 
-    @patch("thx.context.which")
+    @patch("thx.context.shutil.which")
     @patch("thx.context.runtime_version")
     def test_find_runtime_no_venv_wrong_version(
         self, runtime_mock: Mock, which_mock: Mock
@@ -187,7 +189,7 @@ class ContextTest(TestCase):
                         ]
                     )
 
-    @patch("thx.context.which")
+    @patch("thx.context.shutil.which")
     @patch("thx.context.runtime_version")
     def test_find_runtime_venv(self, runtime_mock: Mock, which_mock: Mock) -> None:
         with TemporaryDirectory() as td:
@@ -273,3 +275,31 @@ class ContextTest(TestCase):
                 [call(version, expected_venvs[version]) for version in TEST_VERSIONS]
             )
             log_mock.warning.assert_called_once()
+
+    @patch("thx.context.run_command")
+    @patch("thx.context.which")
+    @async_test
+    async def test_prepare_virtualenv_live(
+        self, which_mock: Mock, run_mock: Mock
+    ) -> None:
+        async def fake_run_command(cmd: Sequence[StrPath]) -> CommandResult:
+            return CommandResult(0, "", "")
+
+        run_mock.side_effect = fake_run_command
+        which_mock.side_effect = lambda b, ctx: f"{ctx.venv / 'bin'}/{b}"
+
+        with TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+            config = Config(root=tdp)
+            ctx = context.resolve_contexts(config)[0]
+            self.assertTrue(ctx.live)
+
+            pip = ctx.venv / "bin" / "pip"
+
+            await context.prepare_virtualenv(ctx, config)
+            run_mock.assert_has_calls(
+                [
+                    call([pip.as_posix(), "install", "-U", "pip"]),
+                    call([pip.as_posix(), "install", "-U", config.root]),
+                ]
+            )

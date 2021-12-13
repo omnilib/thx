@@ -1,17 +1,20 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import asyncio
 import logging
 import platform
 import re
+import shutil
 import subprocess
 from pathlib import Path
-from shutil import which
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from packaging.version import Version
 
-from .types import Config, Context
+from .runner import run_command, which
+
+from .types import Config, Context, StrPath
 
 LOG = logging.getLogger(__name__)
 PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+(\.\d+)?)")
@@ -67,7 +70,7 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
     if venv.is_dir():
         bin_dir = venv / "bin"
         if bin_dir.is_dir():
-            binary_path_str = which("python", path=f"{bin_dir.as_posix()}")
+            binary_path_str = shutil.which("python", path=f"{bin_dir.as_posix()}")
             if binary_path_str:
                 return Path(binary_path_str)
 
@@ -77,7 +80,7 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
         "python",
     ]
     for binary in binary_names:
-        binary_path_str = which(binary)
+        binary_path_str = shutil.which(binary)
         LOG.debug("which(%s) -> %s", binary, binary_path_str)
         if binary_path_str is not None:
             binary_path = Path(binary_path_str)
@@ -113,6 +116,58 @@ def resolve_contexts(config: Config) -> List[Context]:
         else:
             contexts.append(Context(version, runtime_path, venv))
 
-    LOG.warning("missing Python versions: %r", [str(v) for v in missing_versions])
+    if missing_versions:
+        LOG.warning("missing Python versions: %r", [str(v) for v in missing_versions])
 
     return contexts
+
+
+async def prepare_virtualenv(context: Context, config: Config) -> None:
+    """Setup virtualenv and install packages"""
+    LOG.info("preparing virtualenv %s", context.venv)
+    prompt = f"thx-{context.python_version}"
+
+    # create virtualenv
+    if context.live:
+        import venv
+
+        venv.create(context.venv, prompt=prompt, with_pip=True)
+        new_python_path = find_runtime(context.python_version, context.venv)
+        assert new_python_path is not None
+        context.python_path = new_python_path
+
+    else:
+        await run_command(
+            [
+                context.python_path,
+                "-m",
+                "venv",
+                "--prompt",
+                prompt,
+                context.venv,
+            ]
+        )
+
+    # upgrade pip
+    pip = which("pip", context)
+    await run_command([pip, "install", "-U", "pip"])
+
+    # install requirements.txt
+    requirements: List[StrPath] = []
+    if config.requirements:
+        requirements += [(config.root / req) for req in config.requirements]
+    else:
+        requirements += [req for req in config.root.glob("requirements*.txt")]
+    if requirements:
+        LOG.debug("installing deps from %s", requirements)
+        cmd: List[StrPath] = [pip, "install", "-U"]
+        for requirement in requirements:
+            cmd.extend(["-r", requirement])
+        await run_command(cmd)
+
+    # install local project
+    await run_command([pip, "install", "-U", config.root])
+
+
+async def prepare_contexts(contexts: Sequence[Context], config: Config) -> None:
+    await asyncio.gather(*[prepare_virtualenv(context, config) for context in contexts])

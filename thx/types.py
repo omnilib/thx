@@ -3,7 +3,8 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Mapping, Sequence
+from shlex import quote
+from typing import List, Mapping, Sequence, Union
 
 from packaging.version import Version
 
@@ -17,6 +18,8 @@ __all__ = [
     "Result",
     "Version",
 ]
+
+StrPath = Union[str, Path]
 
 
 class ConfigError(ValueError):
@@ -41,6 +44,7 @@ class Config:
     default: Sequence[str] = field(default_factory=list)
     values: Mapping[str, str] = field(default_factory=dict)
     versions: Sequence[Version] = field(default_factory=list)
+    requirements: Sequence[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)
@@ -63,8 +67,7 @@ class Options:
 
 
 @dataclass
-class Result:
-    command: Sequence[str]
+class CommandResult:
     exit_code: int
     stdout: str
     stderr: str
@@ -72,3 +75,27 @@ class Result:
     @property
     def success(self) -> bool:
         return self.exit_code == 0
+
+
+@dataclass
+class Event:
+    command: Sequence[str]
+    job: Job
+    context: Context
+
+    def __str__(self) -> str:
+        cmd = " ".join(quote(arg) for arg in self.command)
+        return f"{self.context.python_version} {self.job.name}> {cmd}"
+
+
+@dataclass
+class Start(Event):
+    pass
+
+
+@dataclass
+class Result(Event, CommandResult):
+    def __str__(self) -> str:
+        cmd = " ".join(quote(arg) for arg in self.command)
+        status = "OK" if self.success else "FAIL"
+        return f"{self.context.python_version} {self.job.name}> {cmd} {status}"

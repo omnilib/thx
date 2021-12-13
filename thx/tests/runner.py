@@ -1,51 +1,57 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
-import asyncio
-from functools import wraps
-from typing import Any, Callable, TypeVar
+from pathlib import Path
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import call, Mock, patch
 
 from .. import runner
-from ..types import Config, Job, Result
-
-T = TypeVar("T")
-
-
-def async_test(fn: Callable[..., T]) -> Callable[..., T]:
-    # TODO: find some way of avoiding madness on Python 3.6 and 3.7 around
-    # subprocesses, child handlers, and requiring the main/default event loop
-    @wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> T:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(fn(*args, **kwargs))  # type: ignore
-
-    return wrapper
+from ..types import Config, Context, Job, Result, Version
+from .helper import async_test
 
 
 class RunnerTest(TestCase):
     @patch("thx.runner.shutil.which")
     def test_which(self, which_mock: Mock) -> None:
+        context = Context(Version("3.10"), Path(), Path("/fake/venv"))
         with self.subTest("found"):
-            which_mock.side_effect = lambda b: f"/usr/bin/{b}"
-            self.assertEqual("/usr/bin/frobfrob", runner.which("frobfrob", Config()))
+            which_mock.side_effect = lambda b, path: f"/usr/bin/{b}"
+            self.assertEqual("/usr/bin/frobfrob", runner.which("frobfrob", context))
+            which_mock.assert_has_calls([call("frobfrob", path="/fake/venv/bin")])
+
+        with self.subTest("not in venv"):
+            which_mock.side_effect = [None, "/usr/bin/scoop"]
+            self.assertEqual("/usr/bin/scoop", runner.which("scoop", context))
+            which_mock.assert_has_calls(
+                [
+                    call("scoop", path="/fake/venv/bin"),
+                    call("scoop"),
+                ]
+            )
 
         with self.subTest("not found"):
             which_mock.side_effect = None
             which_mock.return_value = None
-            self.assertEqual("frobfrob", runner.which("frobfrob", Config()))
+            self.assertEqual("frobfrob", runner.which("frobfrob", context))
+            which_mock.assert_has_calls(
+                [
+                    call("frobfrob", path="/fake/venv/bin"),
+                    call("frobfrob"),
+                ]
+            )
 
     @patch("thx.runner.which")
     def test_render_command(self, which_mock: Mock) -> None:
         which_mock.return_value = "/opt/bin/frobfrob"
         config = Config(values={"module": "alpha"})
-        result = runner.render_command("frobfrob check {module}.tests", config)
+        context = Context(Version("3.8"), Path(), Path())
+        result = runner.render_command("frobfrob check {module}.tests", context, config)
         self.assertEqual(["/opt/bin/frobfrob", "check", "alpha.tests"], result)
 
     @patch("thx.runner.shutil.which", return_value=None)
-    def test_prepare_command(self, which_mock: Mock) -> None:
+    def test_prepare_job(self, which_mock: Mock) -> None:
         config = Config(values={"module": "beta"})
+        context = Context(Version("3.9"), Path(), Path())
         run = [
             "echo 'hello world'",
             "flake8 {module}",
@@ -54,20 +60,31 @@ class RunnerTest(TestCase):
         job = Job(name="foo", run=run)
 
         expected = [
-            runner.Step(cmd=["echo", "hello world"], config=config),
-            runner.Step(cmd=["flake8", "beta"], config=config),
-            runner.Step(cmd=["python", "-m", "beta.tests"], config=config),
+            runner.Step(
+                cmd=["echo", "hello world"], job=job, context=context, config=config
+            ),
+            runner.Step(
+                cmd=["flake8", "beta"], job=job, context=context, config=config
+            ),
+            runner.Step(
+                cmd=["python", "-m", "beta.tests"],
+                job=job,
+                context=context,
+                config=config,
+            ),
         ]
-        result = list(runner.prepare_job(job, config))
+        result = list(runner.prepare_job(job, context, config))
         self.assertListEqual(expected, result)
 
     @async_test
     async def test_job_echo(self) -> None:
-        job = runner.Step(
+        step = runner.Step(
             ["echo", "hello world"],
+            Job("echo", ["echo 'hello world'"]),
+            Context(Version("3.9"), Path(), Path()),
             Config(),
         )
-        result = await job
+        result = await step
         self.assertIsInstance(result, Result)
         self.assertEqual(["echo", "hello world"], result.command)
         self.assertEqual(0, result.exit_code)
