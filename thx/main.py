@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 import logging
+import shutil
 import sys
 from functools import partial
 from typing import Any, List, Optional, Sequence
@@ -14,7 +15,7 @@ from .__version__ import __version__
 from .config import load_config
 
 from .core import resolve_jobs, run
-from .types import Options
+from .types import Config, Options
 
 
 def queue_job(name: str, ctx: click.Context) -> None:
@@ -107,6 +108,19 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     print(f"will run: {job_names!r}")
     jobs = resolve_jobs(job_names, config)
     run(jobs, contexts, config)
+
+
+@main.command("clean")
+@click.pass_context
+def clean(ctx: click.Context) -> None:
+    """
+    Clean up virtual environments and data created by thx
+    """
+    config: Config = ctx.obj.config
+    thx_dir = config.root / ".thx"
+    if thx_dir.exists():
+        shutil.rmtree(thx_dir)
+    ctx.obj.exit = True
 
 
 @main.command("list")
