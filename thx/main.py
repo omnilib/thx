@@ -15,7 +15,8 @@ from .__version__ import __version__
 from .config import load_config
 
 from .core import resolve_jobs, run
-from .types import Config, Options
+from .types import Config, Options, Version
+from .utils import version_match
 
 
 def queue_job(name: str, ctx: click.Context) -> None:
@@ -58,16 +59,24 @@ class ThxGroup(click.Group):
 
 
 @click.group(cls=ThxGroup, chain=True, invoke_without_command=True, help=__doc__)
-@click.option("--debug", is_flag=True, help="Enable debug output")
+@click.option("--debug", is_flag=True, default=None, help="Enable debug output")
+@click.option(
+    "--python",
+    "--py",
+    "-p",
+    type=Version,
+    help="Run commands on a specific python version",
+)
 @click.version_option(__version__, "--version", "-V")
 @click.pass_context
-def main(ctx: click.Context, debug: bool) -> None:
+def main(ctx: click.Context, debug: bool, python: Optional[Version]) -> None:
     """
     Setup options and load config
     """
     ctx.ensure_object(Options)
-    ctx.obj.debug = debug
     ctx.obj.config = load_config()
+    ctx.obj.python = python
+    ctx.obj.debug = debug
 
     log_format = (
         "%(levelname)s %(module)s:%(lineno)d: %(message)s"
@@ -95,6 +104,14 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     config = options.config
 
     contexts = resolve_contexts(config)
+    if options.python:
+        context_versions = [context.python_version for context in contexts]
+        matched_versions = version_match(context_versions, options.python)
+        contexts = [
+            context
+            for context in contexts
+            if context.python_version in matched_versions
+        ]
     print(f"runtimes: {[str(ctx.python_version) for ctx in contexts]}")
 
     job_names = options.jobs

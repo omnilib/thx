@@ -15,7 +15,19 @@ from .. import context
 from ..types import CommandResult, Config, Context, StrPath, Version
 
 TEST_VERSIONS = [
-    Version(v) for v in ("3.5", "3.8", "3.8.10", "3.10.42", "4.0", "4.128.1337")
+    Version(v)
+    for v in (
+        "3.5",
+        "3.6.5",
+        "3.8",
+        "3.8.10",
+        "3.9",
+        "3.9.0b1",
+        "3.10.42",
+        "3.11.0a4",
+        "4.0",
+        "4.128.1337",
+    )
 ]
 
 
@@ -290,6 +302,9 @@ class ContextTest(TestCase):
 
         with TemporaryDirectory() as td:
             tdp = Path(td).resolve()
+            reqs = tdp / "requirements.txt"
+            reqs.write_text("\n")
+
             config = Config(root=tdp)
             ctx = context.resolve_contexts(config)[0]
             self.assertTrue(ctx.live)
@@ -300,6 +315,7 @@ class ContextTest(TestCase):
             run_mock.assert_has_calls(
                 [
                     call([pip.as_posix(), "install", "-U", "pip"]),
+                    call([pip.as_posix(), "install", "-U", "-r", reqs]),
                     call([pip.as_posix(), "install", "-U", config.root]),
                 ]
             )

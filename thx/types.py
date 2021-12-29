@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from shlex import quote
-from typing import List, Mapping, Sequence, Union
+from typing import List, Mapping, Optional, Sequence, Union
 
 from packaging.version import Version
 
@@ -60,9 +60,10 @@ class Context:
 
 @dataclass
 class Options:
-    debug: bool = False
     config: Config = field(default_factory=Config)
+    debug: bool = False
     jobs: List[str] = field(default_factory=list)
+    python: Optional[Version] = None
     exit: bool = False
 
 

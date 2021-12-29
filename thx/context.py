@@ -12,25 +12,19 @@ from typing import Dict, List, Optional, Sequence
 
 from packaging.version import Version
 
+from thx.utils import version_match
+
 from .runner import run_command, which
 
 from .types import Config, Context, StrPath
 
 LOG = logging.getLogger(__name__)
-PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+(\.\d+)?)")
+PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+\S+)")
 PYTHON_VERSIONS: Dict[Path, Optional[Version]] = {}
 
 
 def venv_path(config: Config, version: Version) -> Path:
-    if version.micro:
-        return (
-            config.root
-            / ".thx"
-            / "venv"
-            / f"{version.major}.{version.minor}.{version.micro}"
-        )
-    else:
-        return config.root / ".thx" / "venv" / f"{version.major}.{version.minor}"
+    return config.root / ".thx" / "venv" / str(version)
 
 
 def runtime_version(binary: Path) -> Optional[Version]:
@@ -74,6 +68,7 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
             if binary_path_str:
                 return Path(binary_path_str)
 
+    # TODO: better way to find specific micro/pre/post versions?
     binary_names = [
         f"python{version.major}.{version.minor}",
         f"python{version.major}",
@@ -89,11 +84,7 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
             if binary_version is None:
                 continue
 
-            if (
-                binary_version.major == version.major
-                and binary_version.minor == version.minor
-                and (not version.micro or binary_version.micro == version.micro)
-            ):
+            if version_match([binary_version], version):
                 return binary_path
 
     return None
