@@ -48,11 +48,17 @@ async def run_jobs(
     await prepare_contexts(contexts, config)
 
     active_jobs: List[Job] = list(jobs)
+    finished_jobs: List[Job] = []
     for context in contexts:
         async for event in run_jobs_on_context(active_jobs, context, config):
             if isinstance(event, Start) and event.job.once:
-                active_jobs.remove(event.job)
+                finished_jobs.append(event.job)
             yield event
+
+        # remove jobs with once=true from running on future contexts
+        for job in finished_jobs:
+            active_jobs.remove(job)
+        finished_jobs = []
 
 
 def run(
