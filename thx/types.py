@@ -31,6 +31,7 @@ class Job:
     name: str
     run: Sequence[str]
     requires: Sequence[str] = ()
+    once: bool = False
 
     def __post_init__(self) -> None:
         self.name = self.name.casefold()

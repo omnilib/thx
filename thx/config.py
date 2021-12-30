@@ -50,6 +50,7 @@ def ensure_listish(value: Any, key: str) -> List[str]:
 def parse_job(name: str, data: Dict[str, Any]) -> Job:
     run: List[str]
     requires: List[str]
+    once: bool = Job.once
 
     if isinstance(data, str):
         run = [data]
@@ -62,13 +63,15 @@ def parse_job(name: str, data: Dict[str, Any]) -> Job:
         requires = ensure_listish(
             data.pop("requires", None), f"tool.thx.jobs.{name}.requires"
         )
+        if "once" in data:
+            once = bool(data.pop("once"))
     else:
         raise ConfigError(
             f"Job {name!r} must be string, list of strings, or dictionary; "
             f"{data!r} given"
         )
 
-    return Job(name=name, run=run, requires=requires)
+    return Job(name=name, run=run, requires=requires, once=once)
 
 
 def parse_jobs(data: Any) -> List[Job]:
@@ -121,7 +124,8 @@ def load_config(path: Optional[Path] = None) -> Config:
             for v in ensure_listish(
                 data.pop("python_versions", None), "tool.thx.python_versions"
             )
-        )
+        ),
+        reverse=True,
     )
     requirements: List[str] = ensure_listish(
         data.pop("requirements", None), "tool.thx.requirements"

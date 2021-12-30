@@ -51,14 +51,14 @@ strict = true
 ignore_missing_imports = true
 
 [tool.thx]
-default = ["test", "lint"]
+default = ["html", "format", "test", "lint"]
 module = "thx"
 srcs = "thx"
 python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
 
 [tool.thx.jobs]
-html = ["sphinx-build -b html docs html"]
-format = ["python -m ufmt format {srcs}"]
+html = {run="sphinx-build -b html docs html", once=true}
+format = {run="python -m ufmt format {srcs}", once=true}
 lint = [
     "python -m flake8 {srcs}",
     "python -m ufmt check {srcs}",

@@ -47,8 +47,11 @@ async def run_jobs(
 ) -> AsyncIterator[Event]:
     await prepare_contexts(contexts, config)
 
+    active_jobs: List[Job] = list(jobs)
     for context in contexts:
-        async for event in run_jobs_on_context(jobs, context, config):
+        async for event in run_jobs_on_context(active_jobs, context, config):
+            if isinstance(event, Start) and event.job.once:
+                active_jobs.remove(event.job)
             yield event
 
 
