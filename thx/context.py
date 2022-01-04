@@ -17,6 +17,7 @@ from thx.utils import version_match
 from .runner import run_command, which
 
 from .types import Config, Context, StrPath
+from .utils import timed
 
 LOG = logging.getLogger(__name__)
 PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+\S+)")
@@ -90,6 +91,7 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
     return None
 
 
+@timed("resolve contexts")
 def resolve_contexts(config: Config) -> List[Context]:
     if not config.versions:
         version = Version(platform.python_version())
@@ -113,6 +115,7 @@ def resolve_contexts(config: Config) -> List[Context]:
     return contexts
 
 
+@timed("prepare virtualenv")
 async def prepare_virtualenv(context: Context, config: Config) -> None:
     """Setup virtualenv and install packages"""
     LOG.info("preparing virtualenv %s", context.venv)
@@ -160,5 +163,6 @@ async def prepare_virtualenv(context: Context, config: Config) -> None:
     await run_command([pip, "install", "-U", config.root])
 
 
+@timed("prepare contexts")
 async def prepare_contexts(contexts: Sequence[Context], config: Config) -> None:
     await asyncio.gather(*[prepare_virtualenv(context, config) for context in contexts])

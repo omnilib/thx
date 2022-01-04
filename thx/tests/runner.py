@@ -60,13 +60,13 @@ class RunnerTest(TestCase):
         job = Job(name="foo", run=run)
 
         expected = [
-            runner.Step(
+            runner.JobStep(
                 cmd=["echo", "hello world"], job=job, context=context, config=config
             ),
-            runner.Step(
+            runner.JobStep(
                 cmd=["flake8", "beta"], job=job, context=context, config=config
             ),
-            runner.Step(
+            runner.JobStep(
                 cmd=["python", "-m", "beta.tests"],
                 job=job,
                 context=context,
@@ -78,7 +78,7 @@ class RunnerTest(TestCase):
 
     @async_test
     async def test_job_echo(self) -> None:
-        step = runner.Step(
+        step = runner.JobStep(
             ["echo", "hello world"],
             Job("echo", ["echo 'hello world'"]),
             Context(Version("3.9"), Path(), Path()),

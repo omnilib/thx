@@ -1,10 +1,104 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+from asyncio import iscoroutinefunction
+from dataclasses import dataclass, field, replace
+from functools import wraps
 from itertools import zip_longest
-from typing import List
+from time import monotonic_ns
+from typing import Any, Callable, List, Optional, TypeVar
 
-from .types import Version
+from typing_extensions import ParamSpec
+
+from .types import Context, Job, Step, Version
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+TIMINGS: List["timed"] = []
+
+
+@dataclass(order=True)
+class timed:
+    start: int = field(default=0, init=False)
+    end: int = field(default=0, init=False)
+    duration: int = field(default=0, init=False)
+
+    message: str = field()
+    context: Optional[Context] = None
+    job: Optional[Job] = None
+    step: Optional[Step] = None
+
+    def __str__(self) -> str:
+        message = self.message
+        if self.context:
+            message += f" {self.context.python_version}"
+        if self.job:
+            message += f" {self.job.name}"
+        if self.step:
+            message += f" {self.step.cmd}"
+        message += " -> "
+        return f"{message:<40} {self.duration//1000000:>7} ms"
+
+    def __call__(self, fn: Callable[P, R]) -> Callable[P, R]:
+        if iscoroutinefunction(fn):
+
+            @wraps(fn)
+            async def wrapped_async(*args: Any, **kwargs: Any) -> R:
+                timer = replace(self)
+                combined: List[Any] = list(args) + list(kwargs.values())
+
+                for arg in combined:
+                    if isinstance(arg, Context) and timer.context is None:
+                        timer.context = arg
+                    elif isinstance(arg, Job) and timer.job is None:
+                        timer.job = arg
+                    elif isinstance(arg, Step) and timer.step is None:
+                        timer.step = arg
+
+                with timer:
+                    return await fn(*args, **kwargs)  # type: ignore
+
+            return wrapped_async  # type: ignore
+
+        else:
+
+            @wraps(fn)
+            def wrapped(*args: Any, **kwargs: Any) -> R:
+                timer = replace(self)
+                combined: List[Any] = list(args) + list(kwargs.values())
+
+                for arg in combined:
+                    if isinstance(arg, Context) and timer.context is None:
+                        timer.context = arg
+                    elif isinstance(arg, Job) and timer.job is None:
+                        timer.job = arg
+                    elif isinstance(arg, Step) and timer.step is None:
+                        timer.step = arg
+
+                with timer:
+                    return fn(*args, **kwargs)
+
+            return wrapped
+
+    def __enter__(self) -> None:
+        self.start = monotonic_ns()
+
+    def __exit__(self, *args: Any) -> None:
+        now = monotonic_ns()
+        self.end = now
+        self.duration = now - self.start
+
+        TIMINGS.append(self)
+
+
+def get_timings() -> List[timed]:
+    global TIMINGS
+
+    result = list(sorted(TIMINGS))
+    TIMINGS.clear()
+    return result
 
 
 def version_match(versions: List[Version], target: Version) -> List[Version]:

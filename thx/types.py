@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from shlex import quote
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import Any, Generator, List, Mapping, Optional, Sequence, Union
 
 from packaging.version import Version
 
@@ -62,6 +62,7 @@ class Context:
 @dataclass
 class Options:
     config: Config = field(default_factory=Config)
+    benchmark: bool = False
     debug: bool = False
     jobs: List[str] = field(default_factory=list)
     python: Optional[Version] = None
@@ -101,3 +102,17 @@ class Result(Event, CommandResult):
         cmd = " ".join(quote(arg) for arg in self.command)
         status = "OK" if self.success else "FAIL"
         return f"{self.context.python_version} {self.job.name}> {cmd} {status}"
+
+
+@dataclass
+class Step:
+    cmd: Sequence[str]
+    job: Job
+    context: Context
+    config: Config
+
+    def __await__(self) -> Generator[Any, None, Result]:
+        return self.run().__await__()
+
+    async def run(self) -> Result:
+        raise NotImplementedError

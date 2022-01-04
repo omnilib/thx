@@ -7,9 +7,9 @@ import shlex
 import shutil
 from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-from typing import Any, Generator, List, Sequence
+from typing import List, Sequence
 
-from .types import CommandResult, Config, Context, Job, Result, StrPath
+from .types import CommandResult, Config, Context, Job, Result, Step, StrPath
 
 LOG = logging.getLogger(__name__)
 
@@ -45,14 +45,11 @@ async def run_command(command: Sequence[StrPath]) -> CommandResult:
 
 
 @dataclass
-class Step:
+class JobStep(Step):
     cmd: Sequence[str]
     job: Job
     context: Context
     config: Config
-
-    def __await__(self) -> Generator[Any, None, Result]:
-        return self.run().__await__()
 
     async def run(self) -> Result:
         result = await run_command(self.cmd)
@@ -72,6 +69,6 @@ def prepare_job(job: Job, context: Context, config: Config) -> Sequence[Step]:
 
     for item in job.run:
         cmd = render_command(item, context, config)
-        tasks.append(Step(cmd=cmd, job=job, context=context, config=config))
+        tasks.append(JobStep(cmd=cmd, job=job, context=context, config=config))
 
     return tasks

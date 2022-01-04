@@ -1,16 +1,51 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
-from typing import List, Tuple
+from pathlib import Path
+from typing import Any, List, Tuple
 from unittest import TestCase
 
 from .. import utils
-from ..types import Version
+from ..types import Config, Context, Job, Step, Version
 
 from .context import TEST_VERSIONS
 
 
 class UtilTest(TestCase):
+    def setUp(self) -> None:
+        utils.TIMINGS.clear()
+
+    def test_timed_decorator(self) -> None:
+        @utils.timed("test message")
+        def foo(value: int, *args: Any, **kwargs: Any) -> int:
+            return value * 2
+
+        foo(9)
+        timings = utils.get_timings()
+
+        self.assertEqual(1, len(timings))
+        timing = timings[0]
+        self.assertIsInstance(timing, utils.timed)
+        self.assertEqual("test message", timing.message)
+        self.assertGreater(timing.start, 0)
+        self.assertGreater(timing.end, 0)
+        self.assertGreater(timing.duration, 0)
+        self.assertIsNone(timing.context)
+        self.assertIsNone(timing.job)
+        self.assertIsNone(timing.step)
+        self.assertRegex(str(timing), r"test message -> \s+ \d+ ms")
+
+        context = Context(Version("3.8"), Path(), Path())
+        job = Job("foo", ())
+        step = Step((), job, context, Config())
+
+        foo(5, context, "fake", job=job, bar=step, step="herring")
+        timing = utils.get_timings()[0]
+        self.assertEqual(context, timing.context)
+        self.assertEqual(job, timing.job)
+        self.assertEqual(step, timing.step)
+        self.assertRegex(str(timing), r"test message 3.8 foo \(\) -> \s+ \d+ ms")
+
     def test_version_match(self) -> None:
         test_data: Tuple[Tuple[str, List[Version]], ...] = (
             ("3.8", [Version("3.8"), Version("3.8.10")]),

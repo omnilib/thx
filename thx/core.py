@@ -2,12 +2,16 @@
 # Licensed under the MIT License
 
 import asyncio
+import logging
 from typing import AsyncIterator, List, Sequence
 
 from thx.context import prepare_contexts
 
 from .runner import prepare_job
 from .types import Config, Context, Event, Job, Result, Start
+from .utils import timed
+
+LOG = logging.getLogger(__name__)
 
 
 def resolve_jobs(names: Sequence[str], config: Config) -> Sequence[Job]:
@@ -33,13 +37,14 @@ async def run_jobs_on_context(
     jobs: Sequence[Job], context: Context, config: Config
 ) -> AsyncIterator[Event]:
     for job in jobs:
-        steps = prepare_job(job, context, config)
-        for step in steps:
-            yield Start(command=step.cmd, job=job, context=context)
-            result = await step
-            yield result
-            if not result.success:
-                return
+        with timed("run job", context, job):
+            steps = prepare_job(job, context, config)
+            for step in steps:
+                yield Start(command=step.cmd, job=job, context=context)
+                result = await step
+                yield result
+                if not result.success:
+                    return
 
 
 async def run_jobs(
@@ -50,15 +55,16 @@ async def run_jobs(
     active_jobs: List[Job] = list(jobs)
     finished_jobs: List[Job] = []
     for context in contexts:
-        async for event in run_jobs_on_context(active_jobs, context, config):
-            if isinstance(event, Start) and event.job.once:
-                finished_jobs.append(event.job)
-            yield event
+        with timed("run jobs", context):
+            async for event in run_jobs_on_context(active_jobs, context, config):
+                if isinstance(event, Start) and event.job.once:
+                    finished_jobs.append(event.job)
+                yield event
 
-        # remove jobs with once=true from running on future contexts
-        for job in finished_jobs:
-            active_jobs.remove(job)
-        finished_jobs = []
+            # remove jobs with once=true from running on future contexts
+            for job in finished_jobs:
+                active_jobs.remove(job)
+            finished_jobs = []
 
 
 def run(

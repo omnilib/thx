@@ -16,7 +16,7 @@ from .config import load_config
 
 from .core import resolve_jobs, run
 from .types import Config, Options, Version
-from .utils import version_match
+from .utils import get_timings, version_match
 
 
 def queue_job(name: str, ctx: click.Context) -> None:
@@ -59,6 +59,7 @@ class ThxGroup(click.Group):
 
 
 @click.group(cls=ThxGroup, chain=True, invoke_without_command=True, help=__doc__)
+@click.option("--benchmark", is_flag=True, default=None, help="Enable benchmarking")
 @click.option("--debug", is_flag=True, default=None, help="Enable debug output")
 @click.option(
     "--python",
@@ -69,13 +70,16 @@ class ThxGroup(click.Group):
 )
 @click.version_option(__version__, "--version", "-V")
 @click.pass_context
-def main(ctx: click.Context, debug: bool, python: Optional[Version]) -> None:
+def main(
+    ctx: click.Context, benchmark: bool, debug: bool, python: Optional[Version]
+) -> None:
     """
     Setup options and load config
     """
     ctx.ensure_object(Options)
     ctx.obj.config = load_config()
     ctx.obj.python = python
+    ctx.obj.benchmark = benchmark
     ctx.obj.debug = debug
 
     log_format = (
@@ -125,6 +129,11 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     print(f"will run: {job_names!r}")
     jobs = resolve_jobs(job_names, config)
     run(jobs, contexts, config)
+
+    if options.benchmark:
+        click.echo("\nbenchmark timings:\n------------------")
+        for timing in get_timings():
+            click.echo(f"  {timing}")
 
 
 @main.command("clean")
