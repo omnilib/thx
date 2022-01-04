@@ -50,6 +50,9 @@ async def run_jobs_on_context(
 async def run_jobs(
     jobs: Sequence[Job], contexts: Sequence[Context], config: Config
 ) -> AsyncIterator[Event]:
+    if all(job.once for job in jobs):
+        LOG.debug("all jobs have once=true, trimming contexts")
+        contexts = contexts[0:1]
     await prepare_contexts(contexts, config)
 
     active_jobs: List[Job] = list(jobs)
