@@ -59,12 +59,15 @@ python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
 [tool.thx.jobs]
 html = {run="sphinx-build -b html docs html", once=true}
 format = {run="python -m ufmt format {srcs}", once=true}
-lint = [
-    "python -m flake8 {srcs}",
-    "python -m ufmt check {srcs}",
-]
 test = [
     "python -m coverage run -m {module}.tests",
     "python -m coverage report",
     "python -m mypy --install-types --non-interactive -p {module}",
 ]
+
+[tool.thx.jobs.lint]
+run = [
+    "python -m flake8 {srcs}",
+    "python -m ufmt check {srcs}",
+]
+parallel = true

@@ -51,6 +51,7 @@ def parse_job(name: str, data: Dict[str, Any]) -> Job:
     run: List[str]
     requires: List[str]
     once: bool = Job.once
+    parallel: bool = Job.parallel
 
     if isinstance(data, str):
         run = [data]
@@ -65,13 +66,15 @@ def parse_job(name: str, data: Dict[str, Any]) -> Job:
         )
         if "once" in data:
             once = bool(data.pop("once"))
+        if "parallel" in data:
+            parallel = bool(data.pop("parallel"))
     else:
         raise ConfigError(
             f"Job {name!r} must be string, list of strings, or dictionary; "
             f"{data!r} given"
         )
 
-    return Job(name=name, run=run, requires=requires, once=once)
+    return Job(name=name, run=run, requires=requires, once=once, parallel=parallel)
 
 
 def parse_jobs(data: Any) -> List[Job]:

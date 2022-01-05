@@ -153,6 +153,48 @@ class ConfigTest(TestCase):
             self.assertDictEqual(expected.values, result.values)
             self.assertEqual(expected, result)
 
+    def test_job_defaults_once(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.thx.jobs.foo]
+            run = []
+
+            [tool.thx.jobs.bar]
+            run = []
+            once = true
+            """
+        ) as td:
+            expected = Config(
+                root=td,
+                jobs={
+                    "foo": Job(name="foo", run=[], once=False),
+                    "bar": Job(name="bar", run=[], once=True),
+                },
+            )
+            result = load_config(td)
+            self.assertDictEqual(expected.jobs, result.jobs)
+
+    def test_job_defaults_parallel(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.thx.jobs.foo]
+            run = []
+
+            [tool.thx.jobs.bar]
+            run = []
+            parallel = true
+            """
+        ) as td:
+            expected = Config(
+                root=td,
+                jobs={
+                    "foo": Job(name="foo", run=[], parallel=False),
+                    "bar": Job(name="bar", run=[], parallel=True),
+                },
+            )
+            result = load_config(td)
+            self.assertDictEqual(expected.jobs, result.jobs)
+
     def test_bad_value_jobs(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.jobs"):
             with fake_pyproject(
