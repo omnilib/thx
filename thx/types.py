@@ -80,6 +80,10 @@ class CommandResult:
     def success(self) -> bool:
         return self.exit_code == 0
 
+    @property
+    def error(self) -> bool:
+        return self.exit_code != 0
+
 
 @dataclass
 class Event:

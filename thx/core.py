@@ -53,6 +53,7 @@ async def run_jobs(
     if all(job.once for job in jobs):
         LOG.debug("all jobs have once=true, trimming contexts")
         contexts = contexts[0:1]
+
     await prepare_contexts(contexts, config)
 
     active_jobs: List[Job] = list(jobs)

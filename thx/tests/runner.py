@@ -91,3 +91,4 @@ class RunnerTest(TestCase):
         self.assertEqual("hello world", result.stdout.strip())
         self.assertEqual("", result.stderr)
         self.assertTrue(result.success)
+        self.assertFalse(result.error)

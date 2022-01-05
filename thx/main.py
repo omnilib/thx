@@ -108,12 +108,18 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
         ctx.invoke(list_commands)
         ctx.exit(1)
 
-    run(options)  # do the thing
+    results = run(options)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")
         for timing in get_timings():
             click.echo(f"  {timing}")
+
+    if any(result.error for result in results):
+        click.secho("FAIL", fg="yellow", err=True)
+        ctx.exit(1)
+    else:
+        click.secho("OK", fg="green", err=True)
 
 
 @main.command("clean")
