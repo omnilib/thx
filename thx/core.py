@@ -5,10 +5,10 @@ import asyncio
 import logging
 from typing import AsyncIterator, List, Sequence
 
-from thx.context import prepare_contexts
+from thx.context import prepare_contexts, resolve_contexts
 
 from .runner import prepare_job
-from .types import Config, Context, Event, Job, Result, Start
+from .types import Config, Context, Event, Job, Options, Result, Start
 from .utils import timed
 
 LOG = logging.getLogger(__name__)
@@ -70,10 +70,24 @@ async def run_jobs(
             finished_jobs = []
 
 
+@timed("run")
 def run(
-    jobs: Sequence[Job], contexts: Sequence[Context], config: Config
+    options: Options,
 ) -> List[Result]:
     results: List[Result] = []
+
+    config = options.config
+    contexts = resolve_contexts(config, options.python)
+
+    job_names = options.jobs
+    if not job_names:
+        if config.default:
+            job_names.extend(config.default)
+        else:
+            LOG.warning("no jobs to run")
+            return []
+
+    jobs = resolve_jobs(job_names, config)
 
     async def runner() -> None:
         async for event in run_jobs(jobs, contexts, config):

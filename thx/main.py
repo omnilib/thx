@@ -9,14 +9,13 @@ from typing import Any, List, Optional, Sequence
 
 import click
 
-from thx.context import resolve_contexts
 from . import __doc__
 from .__version__ import __version__
 from .config import load_config
 
-from .core import resolve_jobs, run
+from .core import run
 from .types import Config, Options, Version
-from .utils import get_timings, version_match
+from .utils import get_timings
 
 
 def queue_job(name: str, ctx: click.Context) -> None:
@@ -105,30 +104,11 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if options.exit:
         return
 
-    config = options.config
+    if not options.jobs and not options.config.default:
+        ctx.invoke(list_commands)
+        ctx.exit(1)
 
-    contexts = resolve_contexts(config)
-    if options.python:
-        context_versions = [context.python_version for context in contexts]
-        matched_versions = version_match(context_versions, options.python)
-        contexts = [
-            context
-            for context in contexts
-            if context.python_version in matched_versions
-        ]
-    print(f"runtimes: {[str(ctx.python_version) for ctx in contexts]}")
-
-    job_names = options.jobs
-    if not job_names:
-        if config.default:
-            job_names.extend(config.default)
-        else:
-            ctx.invoke(list_commands)
-            ctx.exit(1)
-
-    print(f"will run: {job_names!r}")
-    jobs = resolve_jobs(job_names, config)
-    run(jobs, contexts, config)
+    run(options)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")

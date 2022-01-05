@@ -92,7 +92,9 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
 
 
 @timed("resolve contexts")
-def resolve_contexts(config: Config) -> List[Context]:
+def resolve_contexts(
+    config: Config, filter_version: Optional[Version] = None
+) -> List[Context]:
     if not config.versions:
         version = Version(platform.python_version())
         # defer resolving python path to after venv creation
@@ -111,6 +113,17 @@ def resolve_contexts(config: Config) -> List[Context]:
 
     if missing_versions:
         LOG.warning("missing Python versions: %r", [str(v) for v in missing_versions])
+
+    context_versions = [context.python_version for context in contexts]
+    LOG.info("Available Python versions: %s", context_versions)
+
+    if filter_version is not None:
+        matched_versions = version_match(context_versions, filter_version)
+        contexts = [
+            context
+            for context in contexts
+            if context.python_version in matched_versions
+        ]
 
     return contexts
 
