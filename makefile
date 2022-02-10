@@ -25,6 +25,7 @@ lint:
 
 test:
 	python -m coverage run -m $(SRCS).tests
+	python -m coverage combine
 	python -m coverage report
 	python -m mypy --install-types --non-interactive -p $(SRCS)
 
