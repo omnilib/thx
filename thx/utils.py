@@ -1,6 +1,7 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import logging
 from asyncio import iscoroutinefunction
 from dataclasses import dataclass, field, replace
 from functools import wraps
@@ -16,6 +17,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+LOG = logging.getLogger(__name__)
 TIMINGS: List["timed"] = []
 
 
@@ -39,7 +41,12 @@ class timed:
         if self.step:
             message += f" {self.step.cmd}"
         message += " -> "
-        return f"{message:<40} {self.duration//1000000:>7} ms"
+        if self.duration:
+            return f"{message:<40} {self.duration//1000000:>7} ms"
+        elif self.start:
+            return f"{message} (started)"
+        else:
+            return f"{message} (not started)"
 
     def __call__(self, fn: Callable[P, R]) -> Callable[P, R]:
         if iscoroutinefunction(fn):

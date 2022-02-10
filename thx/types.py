@@ -33,6 +33,7 @@ class Job:
     requires: Sequence[str] = ()
     once: bool = False
     parallel: bool = False
+    isolated: bool = False
 
     def __post_init__(self) -> None:
         self.name = self.name.casefold()
@@ -86,14 +87,27 @@ class CommandResult:
 
 
 @dataclass
-class Event:
-    command: Sequence[str]
+class Step:
+    cmd: Sequence[str]
     job: Job
+    context: Context
+    config: Config
+
+    def __await__(self) -> Generator[Any, None, "Result"]:
+        return self.run().__await__()
+
+    async def run(self) -> "Result":
+        raise NotImplementedError
+
+
+@dataclass
+class Event:
+    step: Step
     context: Context
 
     def __str__(self) -> str:
-        cmd = " ".join(quote(arg) for arg in self.command)
-        return f"{self.context.python_version} {self.job.name}> {cmd}"
+        cmd = " ".join(quote(arg) for arg in self.step.cmd)
+        return f"{self.context.python_version} {self.step.job.name}> {cmd}"
 
 
 @dataclass
@@ -104,20 +118,6 @@ class Start(Event):
 @dataclass
 class Result(Event, CommandResult):
     def __str__(self) -> str:
-        cmd = " ".join(quote(arg) for arg in self.command)
+        cmd = " ".join(quote(arg) for arg in self.step.cmd)
         status = "OK" if self.success else "FAIL"
-        return f"{self.context.python_version} {self.job.name}> {cmd} {status}"
-
-
-@dataclass
-class Step:
-    cmd: Sequence[str]
-    job: Job
-    context: Context
-    config: Config
-
-    def __await__(self) -> Generator[Any, None, Result]:
-        return self.run().__await__()
-
-    async def run(self) -> Result:
-        raise NotImplementedError
+        return f"{self.context.python_version} {self.step.job.name}> {cmd} {status}"

@@ -86,7 +86,7 @@ class RunnerTest(TestCase):
         )
         result = await step
         self.assertIsInstance(result, Result)
-        self.assertEqual(["echo", "hello world"], result.command)
+        self.assertEqual(step, result.step)
         self.assertEqual(0, result.exit_code)
         self.assertEqual("hello world", result.stdout.strip())
         self.assertEqual("", result.stderr)

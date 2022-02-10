@@ -3,12 +3,14 @@
 
 import asyncio
 import logging
-from typing import AsyncIterator, List, Sequence
+from typing import AsyncIterable, AsyncIterator, List, Sequence
 
-from thx.context import prepare_contexts, resolve_contexts
+from aioitertools.asyncio import as_generated
+
+from .context import prepare_contexts, resolve_contexts
 
 from .runner import prepare_job
-from .types import Config, Context, Event, Job, Options, Result, Start
+from .types import Config, Context, Event, Job, Options, Result, Start, Step
 from .utils import timed
 
 LOG = logging.getLogger(__name__)
@@ -33,18 +35,29 @@ def resolve_jobs(names: Sequence[str], config: Config) -> Sequence[Job]:
     return queue
 
 
-async def run_jobs_on_context(
-    jobs: Sequence[Job], context: Context, config: Config
+async def run_step_on_context(step: Step, context: Context) -> AsyncIterator[Event]:
+    yield Start(step=step, context=context)
+    result = await step
+    yield result
+
+
+async def run_job_on_context(
+    job: Job, context: Context, config: Config
 ) -> AsyncIterator[Event]:
-    for job in jobs:
-        with timed("run job", context, job):
-            steps = prepare_job(job, context, config)
+    with timed("run job", context, job):
+        steps = prepare_job(job, context, config)
+
+        if job.parallel:
+            generators = [run_step_on_context(step, context) for step in steps]
+            async for event in as_generated(generators):
+                yield event
+
+        else:
             for step in steps:
-                yield Start(command=step.cmd, job=job, context=context)
-                result = await step
-                yield result
-                if not result.success:
-                    return
+                async for event in run_step_on_context(step, context):
+                    yield event
+                    if isinstance(event, Result) and not event.success:
+                        return
 
 
 async def run_jobs(
@@ -56,19 +69,18 @@ async def run_jobs(
 
     await prepare_contexts(contexts, config)
 
-    active_jobs: List[Job] = list(jobs)
-    finished_jobs: List[Job] = []
-    for context in contexts:
-        with timed("run jobs", context):
-            async for event in run_jobs_on_context(active_jobs, context, config):
-                if isinstance(event, Start) and event.job.once:
-                    finished_jobs.append(event.job)
-                yield event
+    generators: List[AsyncIterable[Event]] = []
 
-            # remove jobs with once=true from running on future contexts
-            for job in finished_jobs:
-                active_jobs.remove(job)
-            finished_jobs = []
+    for job in jobs:
+        if job.once:
+            generators = [run_job_on_context(job, contexts[0], config)]
+        else:
+            generators = [
+                run_job_on_context(job, context, config) for context in contexts
+            ]
+
+        async for event in as_generated(generators):
+            yield event
 
 
 @timed("run")

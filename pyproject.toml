@@ -36,6 +36,7 @@ signed_tags = false
 
 [tool.coverage.run]
 branch = true
+parallel = true
 include = ["thx/*"]
 omit = ["thx/tests/*"]
 
@@ -51,7 +52,7 @@ strict = true
 ignore_missing_imports = true
 
 [tool.thx]
-default = ["html", "format", "test", "lint"]
+default = ["format", "html", "test", "lint"]
 module = "thx"
 srcs = "thx"
 python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
@@ -59,14 +60,19 @@ python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
 [tool.thx.jobs]
 html = {run="sphinx-build -b html docs html", once=true}
 format = {run="python -m ufmt format {srcs}", once=true}
-test = [
-    "python -m coverage run -m {module}.tests",
+coverage = "python -m coverage run -m {module}.tests"
+
+[tool.thx.jobs.test]
+requires = ["coverage"]
+run = [
+    "python -m coverage combine",
     "python -m coverage report",
-    "python -m mypy --install-types --non-interactive -p {module}",
 ]
+once = true
 
 [tool.thx.jobs.lint]
 run = [
+    "python -m mypy --install-types --non-interactive -p {module}",
     "python -m flake8 {srcs}",
     "python -m ufmt check {srcs}",
 ]

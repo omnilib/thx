@@ -7,7 +7,8 @@ import shlex
 import shutil
 from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-from typing import List, Sequence
+from pathlib import Path
+from typing import List, Optional, Sequence
 
 from .types import CommandResult, Config, Context, Job, Result, Step, StrPath
 
@@ -25,7 +26,7 @@ def which(name: str, context: Context) -> str:
 
 
 def render_command(run: str, context: Context, config: Config) -> Sequence[str]:
-    run = run.format(**config.values)
+    run = run.format(**config.values, python_version=context.python_version)
     cmd = shlex.split(run)
     cmd[0] = which(cmd[0], context)
     return cmd
@@ -46,17 +47,11 @@ async def run_command(command: Sequence[StrPath]) -> CommandResult:
 
 @dataclass
 class JobStep(Step):
-    cmd: Sequence[str]
-    job: Job
-    context: Context
-    config: Config
-
     async def run(self) -> Result:
         result = await run_command(self.cmd)
 
         return Result(
-            command=self.cmd,
-            job=self.job,
+            step=self,
             context=self.context,
             exit_code=result.exit_code,
             stdout=result.stdout,
