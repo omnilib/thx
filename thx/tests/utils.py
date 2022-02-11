@@ -1,6 +1,7 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import time
 from pathlib import Path
 from typing import Any, List, Tuple
 from unittest import TestCase
@@ -18,6 +19,7 @@ class UtilTest(TestCase):
     def test_timed_decorator(self) -> None:
         @utils.timed("test message")
         def foo(value: int, *args: Any, **kwargs: Any) -> int:
+            time.sleep(0.02)  # Windows only has precision >15ms
             return value * 2
 
         foo(9)

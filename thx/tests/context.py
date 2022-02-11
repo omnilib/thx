@@ -309,13 +309,14 @@ class ContextTest(TestCase):
             ctx = context.resolve_contexts(config)[0]
             self.assertTrue(ctx.live)
 
-            pip = ctx.venv / "bin" / "pip"
+            pip = which_mock("pip", ctx)
 
             await context.prepare_virtualenv(ctx, config)
+
             run_mock.assert_has_calls(
                 [
-                    call([pip.as_posix(), "install", "-U", "pip"]),
-                    call([pip.as_posix(), "install", "-U", "-r", reqs]),
-                    call([pip.as_posix(), "install", "-U", config.root]),
+                    call([pip, "install", "-U", "pip"]),
+                    call([pip, "install", "-U", "-r", reqs]),
+                    call([pip, "install", "-U", config.root]),
                 ]
             )
