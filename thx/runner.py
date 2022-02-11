@@ -7,8 +7,7 @@ import shlex
 import shutil
 from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 from .types import CommandResult, Config, Context, Job, Result, Step, StrPath
 
