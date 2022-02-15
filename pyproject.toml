@@ -9,6 +9,7 @@ author-email = "john@noswap.com"
 description-file = "README.rst"
 home-page = "https://github.com/jreese/thx"
 requires = [
+    "aioitertools >= 0.10.0b1",
     "tomli >= 1.0",
     "trailrunner >= 1.1",
 ]

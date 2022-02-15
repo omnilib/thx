@@ -12,6 +12,7 @@ dev:
 
 setup:
 	python -m pip install -Ur requirements-dev.txt
+	python -m pip install -Ur requirements.txt
 
 release: lint test clean
 	flit publish
