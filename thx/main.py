@@ -60,6 +60,7 @@ class ThxGroup(click.Group):
 @click.group(cls=ThxGroup, chain=True, invoke_without_command=True, help=__doc__)
 @click.option("--benchmark", is_flag=True, default=None, help="Enable benchmarking")
 @click.option("--debug", is_flag=True, default=None, help="Enable debug output")
+@click.option("--clean", is_flag=True, help="Clean virtualenvs first")
 @click.option(
     "--python",
     "--py",
@@ -70,7 +71,11 @@ class ThxGroup(click.Group):
 @click.version_option(__version__, "--version", "-V")
 @click.pass_context
 def main(
-    ctx: click.Context, benchmark: bool, debug: bool, python: Optional[Version]
+    ctx: click.Context,
+    benchmark: bool,
+    debug: bool,
+    clean: bool,
+    python: Optional[Version],
 ) -> None:
     """
     Setup options and load config
@@ -80,6 +85,7 @@ def main(
     ctx.obj.python = python
     ctx.obj.benchmark = benchmark
     ctx.obj.debug = debug
+    ctx.obj.clean = clean
 
     log_format = (
         "%(levelname)s %(module)s:%(lineno)d: %(message)s"
@@ -108,6 +114,9 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
         ctx.invoke(list_commands)
         ctx.exit(1)
 
+    if options.clean:
+        ctx.invoke(clean)
+
     results = run(options)  # do the thing
 
     if options.benchmark:
@@ -131,6 +140,7 @@ def clean(ctx: click.Context) -> None:
     config: Config = ctx.obj.config
     thx_dir = config.root / ".thx"
     if thx_dir.exists():
+        click.echo(f"Cleaning {thx_dir} ...")
         shutil.rmtree(thx_dir)
     ctx.obj.exit = True
 
