@@ -4,4 +4,5 @@
 from .config import ConfigTest
 from .context import ContextTest
 from .runner import RunnerTest
+from .types import TypesTest
 from .utils import UtilTest

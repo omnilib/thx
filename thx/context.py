@@ -1,27 +1,29 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
-import asyncio
 import logging
 import platform
 import re
 import shutil
 import subprocess
+import time
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import AsyncIterator, Dict, List, Optional, Sequence
 
+from aioitertools.asyncio import as_generated
 from packaging.version import Version
 
 from thx.utils import version_match
 
 from .runner import run_command, which
 
-from .types import Config, Context, StrPath
+from .types import Config, Context, Event, StrPath, VenvCreate, VenvReady
 from .utils import timed
 
 LOG = logging.getLogger(__name__)
 PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+\S+)")
 PYTHON_VERSIONS: Dict[Path, Optional[Version]] = {}
+TIMESTAMP = "thx.timestamp"
 
 
 def venv_path(config: Config, version: Version) -> Path:
@@ -128,54 +130,104 @@ def resolve_contexts(
     return contexts
 
 
-@timed("prepare virtualenv")
-async def prepare_virtualenv(context: Context, config: Config) -> None:
-    """Setup virtualenv and install packages"""
-    LOG.info("preparing virtualenv %s", context.venv)
-    prompt = f"thx-{context.python_version}"
-
-    # create virtualenv
-    if context.live:
-        import venv
-
-        venv.create(context.venv, prompt=prompt, with_pip=True)
-        new_python_path = find_runtime(context.python_version, context.venv)
-        assert new_python_path is not None
-        context.python_path = new_python_path
-
+def project_requirements(config: Config) -> Sequence[Path]:
+    """Get a list of Path objects for configured or discovered requirements files"""
+    paths: List[Path] = []
+    if config.requirements:
+        paths += [(config.root / req) for req in config.requirements]
     else:
-        await run_command(
-            [
-                context.python_path,
-                "-m",
-                "venv",
-                "--prompt",
-                prompt,
-                context.venv,
-            ]
+        paths += [req for req in config.root.glob("requirements*.txt")]
+    return paths
+
+
+def needs_update(context: Context, config: Config) -> bool:
+    """Compare timestamps of marker file and requirements files"""
+    try:
+        timestamp = context.venv / TIMESTAMP
+        if timestamp.exists():
+            base = timestamp.stat().st_mtime_ns
+            newest = 0
+            reqs = project_requirements(config)
+            for req in reqs:
+                if req.exists():
+                    mod_time = req.stat().st_mtime_ns
+                    newest = max(newest, mod_time)
+            return newest > base
+
+        else:
+            LOG.debug("no timestamp for %s", context.venv)
+
+    except Exception:
+        LOG.warning(
+            "Failed to read timestamps of virtualenv/requirements for %s",
+            context.venv,
+            exc_info=True,
         )
 
-    # upgrade pip
-    pip = which("pip", context)
-    await run_command([pip, "install", "-U", "pip"])
+    return True
 
-    # install requirements.txt
-    requirements: List[StrPath] = []
-    if config.requirements:
-        requirements += [(config.root / req) for req in config.requirements]
+
+@timed("prepare virtualenv")
+async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[Event]:
+    """Setup virtualenv and install packages"""
+
+    if needs_update(context, config):
+        LOG.info("preparing virtualenv %s", context.venv)
+        yield VenvCreate(context)
+
+        # create virtualenv
+        prompt = f"thx-{context.python_version}"
+        if context.live:
+            import venv
+
+            venv.create(context.venv, clear=True, prompt=prompt, with_pip=True)
+            new_python_path = find_runtime(context.python_version, context.venv)
+            assert new_python_path is not None
+            context.python_path = new_python_path
+
+        else:
+            await run_command(
+                [
+                    context.python_path,
+                    "-m",
+                    "venv",
+                    "--clear",
+                    "--prompt",
+                    prompt,
+                    context.venv,
+                ]
+            )
+
+        # upgrade pip
+        pip = which("pip", context)
+        await run_command([pip, "install", "-U", "pip"])
+
+        # install requirements.txt
+        requirements = project_requirements(config)
+        if requirements:
+            LOG.debug("installing deps from %s", requirements)
+            cmd: List[StrPath] = [pip, "install", "-U"]
+            for requirement in requirements:
+                cmd.extend(["-r", requirement])
+            await run_command(cmd)
+
+        # install local project
+        await run_command([pip, "install", "-U", config.root])
+
+        # timestamp marker
+        content = f"{time.time_ns()}\n"
+        (context.venv / TIMESTAMP).write_text(content)
+
     else:
-        requirements += [req for req in config.root.glob("requirements*.txt")]
-    if requirements:
-        LOG.debug("installing deps from %s", requirements)
-        cmd: List[StrPath] = [pip, "install", "-U"]
-        for requirement in requirements:
-            cmd.extend(["-r", requirement])
-        await run_command(cmd)
+        LOG.debug("reusing existing virtualenv %s", context.venv)
 
-    # install local project
-    await run_command([pip, "install", "-U", config.root])
+    yield VenvReady(context)
 
 
 @timed("prepare contexts")
-async def prepare_contexts(contexts: Sequence[Context], config: Config) -> None:
-    await asyncio.gather(*[prepare_virtualenv(context, config) for context in contexts])
+async def prepare_contexts(
+    contexts: Sequence[Context], config: Config
+) -> AsyncIterator[Event]:
+    gens = [prepare_virtualenv(context, config) for context in contexts]
+    async for event in as_generated(gens):
+        yield event

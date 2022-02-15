@@ -5,14 +5,23 @@ import platform
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, Sequence
+from typing import AsyncIterator, List, Optional, Sequence
 from unittest import TestCase
 from unittest.mock import call, Mock, patch
 
 from thx.tests.helper import async_test
 
 from .. import context
-from ..types import CommandResult, Config, Context, StrPath, Version
+from ..types import (
+    CommandResult,
+    Config,
+    Context,
+    Event,
+    StrPath,
+    VenvCreate,
+    VenvReady,
+    Version,
+)
 
 TEST_VERSIONS = [
     Version(v)
@@ -288,6 +297,61 @@ class ContextTest(TestCase):
             )
             log_mock.warning.assert_called_once()
 
+    @async_test
+    async def test_project_requirements(self) -> None:
+        with TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+
+            with self.subTest("empty dir no config"):
+                config = Config(root=tdp)
+                expected: List[Path] = []
+                reqs = list(context.project_requirements(config))
+                self.assertListEqual(expected, reqs)
+
+            with self.subTest("empty dir with config"):
+                config = Config(
+                    root=tdp, requirements=["requirements.txt", "requirements-dev.txt"]
+                )
+                expected = [tdp / "requirements.txt", tdp / "requirements-dev.txt"]
+                reqs = list(context.project_requirements(config))
+                self.assertListEqual(expected, reqs)
+
+            (tdp / "requirements.txt").write_text("\n")
+
+            with self.subTest("reqs file no config"):
+                config = Config(root=tdp)
+                expected = [tdp / "requirements.txt"]
+                reqs = list(context.project_requirements(config))
+                self.assertListEqual(expected, reqs)
+
+            with self.subTest("reqs file with config"):
+                config = Config(
+                    root=tdp, requirements=["requirements.txt", "requirements-dev.txt"]
+                )
+                expected = [tdp / "requirements.txt", tdp / "requirements-dev.txt"]
+                reqs = list(context.project_requirements(config))
+                self.assertListEqual(expected, reqs)
+
+    @async_test
+    async def test_needs_update(self) -> None:
+        with TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+
+            reqs = tdp / "requirements.txt"
+            reqs.write_text("\n")
+
+            venv = tdp / ".thx" / "venv" / "3.4"
+            ctx = Context(Version("3.4"), venv / "bin" / "python", venv)
+            config = Config(root=tdp)
+
+            with self.subTest("no venv"):
+                self.assertTrue(context.needs_update(ctx, config))
+
+            with self.subTest("fake venv"):
+                venv.mkdir(parents=True)
+                (venv / context.TIMESTAMP).write_text("0\n")
+                self.assertFalse(context.needs_update(ctx, config))
+
     @patch("thx.context.run_command")
     @patch("thx.context.which")
     @async_test
@@ -311,7 +375,9 @@ class ContextTest(TestCase):
 
             pip = which_mock("pip", ctx)
 
-            await context.prepare_virtualenv(ctx, config)
+            expected = [VenvCreate(ctx), VenvReady(ctx)]
+            events = [event async for event in context.prepare_virtualenv(ctx, config)]
+            self.assertListEqual(expected, events)
 
             run_mock.assert_has_calls(
                 [
@@ -320,3 +386,42 @@ class ContextTest(TestCase):
                     call([pip, "install", "-U", config.root]),
                 ]
             )
+
+            # should reuse virtualenv
+            run_mock.reset_mock()
+
+            expected = [VenvReady(ctx)]
+            events = [event async for event in context.prepare_virtualenv(ctx, config)]
+            self.assertListEqual(expected, events)
+
+            run_mock.assert_not_called()
+
+    @patch("thx.context.prepare_virtualenv")
+    @async_test
+    async def test_prepare_contexts(self, venv_mock: Mock) -> None:
+        async def fake_prepare_virtualenv(
+            context: Context, config: Config
+        ) -> AsyncIterator[Event]:
+            yield VenvCreate(context)
+            yield VenvReady(context)
+
+        venv_mock.side_effect = fake_prepare_virtualenv
+
+        with TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+            config = Config(root=tdp)
+            contexts = [
+                Context(Version("3.4"), Path("/opt/fake/python3.4"), tdp / "venv1"),
+                Context(Version("3.5"), Path("/opt/fake/python3.5"), tdp / "venv2"),
+            ]
+            events = [
+                event async for event in context.prepare_contexts(contexts, config)
+            ]
+            expected = [
+                VenvCreate(contexts[0]),
+                VenvReady(contexts[0]),
+                VenvCreate(contexts[1]),
+                VenvReady(contexts[1]),
+            ]
+            self.assertListEqual(expected, events)
+            venv_mock.assert_has_calls([call(ctx, config) for ctx in contexts])

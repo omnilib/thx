@@ -67,20 +67,29 @@ async def run_jobs(
         LOG.debug("all jobs have once=true, trimming contexts")
         contexts = contexts[0:1]
 
-    await prepare_contexts(contexts, config)
+    async for event in prepare_contexts(contexts, config):
+        yield event
 
     generators: List[AsyncIterable[Event]] = []
 
+    success = True
     for job in jobs:
-        if job.once:
-            generators = [run_job_on_context(job, contexts[0], config)]
-        else:
-            generators = [
-                run_job_on_context(job, context, config) for context in contexts
-            ]
+        with timed("run job", job=job):
+            if job.once:
+                generators = [run_job_on_context(job, contexts[0], config)]
+            else:
+                generators = [
+                    run_job_on_context(job, context, config) for context in contexts
+                ]
 
-        async for event in as_generated(generators):
-            yield event
+            async for event in as_generated(generators):
+                yield event
+                if isinstance(event, Result):
+                    if not event.success:
+                        success = False
+
+            if not success:
+                return
 
 
 @timed("run")

@@ -103,8 +103,25 @@ class Step:
 
 @dataclass
 class Event:
-    step: Step
     context: Context
+
+    def __str__(self) -> str:
+        return f"{self.context.python_version}> {self.__class__.__name__}"
+
+
+@dataclass
+class VenvCreate(Event):
+    pass
+
+
+@dataclass
+class VenvReady(Event):
+    pass
+
+
+@dataclass
+class JobEvent(Event):
+    step: Step
 
     def __str__(self) -> str:
         cmd = " ".join(quote(arg) for arg in self.step.cmd)
@@ -112,12 +129,12 @@ class Event:
 
 
 @dataclass
-class Start(Event):
+class Start(JobEvent):
     pass
 
 
 @dataclass
-class Result(Event, CommandResult):
+class Result(JobEvent, CommandResult):
     def __str__(self) -> str:
         cmd = " ".join(quote(arg) for arg in self.step.cmd)
         status = "OK" if self.success else "FAIL"
