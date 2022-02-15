@@ -5,7 +5,7 @@ import logging
 import shutil
 import sys
 from functools import partial
-from typing import Any, List, Optional, Sequence
+from typing import Any, cast, List, Optional, Sequence
 
 import click
 
@@ -33,19 +33,19 @@ class ThxGroup(click.Group):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._config = load_config()
+        self.config = load_config()
 
     def list_commands(self, ctx: click.Context) -> List[str]:
         commands = super().list_commands(ctx)
         commands += [""]
-        commands += self._config.jobs.keys()
+        commands += self.config.jobs.keys()
         return commands
 
     def create_command(self, name: str) -> Optional[click.Command]:
         if name == "":
             return click.Command("", help="", callback=lambda: True)
-        if name in self._config.jobs:
-            job = self._config.jobs[name]
+        if name in self.config.jobs:
+            job = self.config.jobs[name]
             exe = "; ".join(r for r in job.run)
             desc = f"Run `{exe}`"
             cb = partial(queue_job, name)
@@ -80,8 +80,10 @@ def main(
     """
     Setup options and load config
     """
+    group = cast(ThxGroup, main)
+
     ctx.ensure_object(Options)
-    ctx.obj.config = load_config()
+    ctx.obj.config = group.config
     ctx.obj.python = python
     ctx.obj.benchmark = benchmark
     ctx.obj.debug = debug
