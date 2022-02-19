@@ -79,7 +79,7 @@ class ConfigTest(TestCase):
         ) as td:
             expected = Config(
                 root=td,
-                jobs={"hello": Job(name="hello", run=["echo hello"])},
+                jobs={"hello": Job(name="hello", run=("echo hello",))},
             )
             result = load_config(td)
             self.assertEqual(expected, result)
@@ -100,9 +100,13 @@ class ConfigTest(TestCase):
                 root=td,
                 default=["hello"],
                 jobs={
-                    "hello": Job(name="hello", run=["echo hello"]),
+                    "hello": Job(name="hello", run=("echo hello",)),
                     "lint": Job(
-                        name="lint", run=["flake8 {module}", "black --check {module}"]
+                        name="lint",
+                        run=(
+                            "flake8 {module}",
+                            "black --check {module}",
+                        ),
                     ),
                 },
                 values={"module": "foobar"},
@@ -134,16 +138,23 @@ class ConfigTest(TestCase):
                 root=td,
                 default=["test", "lint"],
                 jobs={
-                    "format": Job(name="format", run=["black {module}"]),
+                    "format": Job(name="format", run=("black {module}",)),
                     "lint": Job(
-                        name="lint", run=["flake8 {module}", "black --check {module}"]
+                        name="lint",
+                        run=(
+                            "flake8 {module}",
+                            "black --check {module}",
+                        ),
                     ),
                     "test": Job(
                         name="test",
-                        run=["python -m unittest {module}", "mypy {module}"],
+                        run=(
+                            "python -m unittest {module}",
+                            "mypy {module}",
+                        ),
                     ),
                     "publish": Job(
-                        name="publish", run=["flit publish"], requires=["test", "lint"]
+                        name="publish", run=("flit publish",), requires=("test", "lint")
                     ),
                 },
                 values={"module": "foobar"},
@@ -167,8 +178,8 @@ class ConfigTest(TestCase):
             expected = Config(
                 root=td,
                 jobs={
-                    "foo": Job(name="foo", run=[], once=False),
-                    "bar": Job(name="bar", run=[], once=True),
+                    "foo": Job(name="foo", run=(), once=False),
+                    "bar": Job(name="bar", run=(), once=True),
                 },
             )
             result = load_config(td)
@@ -188,8 +199,8 @@ class ConfigTest(TestCase):
             expected = Config(
                 root=td,
                 jobs={
-                    "foo": Job(name="foo", run=[], parallel=False),
-                    "bar": Job(name="bar", run=[], parallel=True),
+                    "foo": Job(name="foo", run=(), parallel=False),
+                    "bar": Job(name="bar", run=(), parallel=True),
                 },
             )
             result = load_config(td)

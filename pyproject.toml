@@ -54,7 +54,7 @@ strict = true
 ignore_missing_imports = true
 
 [tool.thx]
-default = ["format", "html", "test", "lint"]
+default = ["format", "html", "coverage", "lint"]
 module = "thx"
 srcs = "thx"
 python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
@@ -62,10 +62,10 @@ python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
 [tool.thx.jobs]
 html = {run="sphinx-build -b html docs html", once=true}
 format = {run="python -m ufmt format {srcs}", once=true}
-coverage = "python -m coverage run -m {module}.tests"
+test = "python -m coverage run -m {module}.tests"
 
-[tool.thx.jobs.test]
-requires = ["coverage"]
+[tool.thx.jobs.coverage]
+requires = ["test"]
 run = [
     "python -m coverage combine",
     "python -m coverage report",

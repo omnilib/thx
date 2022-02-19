@@ -28,7 +28,7 @@ def render_command(run: str, context: Context, config: Config) -> Sequence[str]:
     run = run.format(**config.values, python_version=context.python_version)
     cmd = shlex.split(run)
     cmd[0] = which(cmd[0], context)
-    return cmd
+    return tuple(cmd)
 
 
 async def run_command(command: Sequence[StrPath]) -> CommandResult:
@@ -44,7 +44,7 @@ async def run_command(command: Sequence[StrPath]) -> CommandResult:
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class JobStep(Step):
     async def run(self) -> Result:
         result = await run_command(self.cmd)
@@ -63,6 +63,6 @@ def prepare_job(job: Job, context: Context, config: Config) -> Sequence[Step]:
 
     for item in job.run:
         cmd = render_command(item, context, config)
-        tasks.append(JobStep(cmd=cmd, job=job, context=context, config=config))
+        tasks.append(JobStep(cmd=cmd, job=job, context=context))
 
     return tasks

@@ -7,7 +7,7 @@ from typing import Any, List, Tuple
 from unittest import TestCase
 
 from .. import utils
-from ..types import Config, Context, Job, Step, Version
+from ..types import Context, Job, Step, Version
 
 from .context import TEST_VERSIONS
 
@@ -39,7 +39,7 @@ class UtilTest(TestCase):
 
         context = Context(Version("3.8"), Path(), Path())
         job = Job("foo", ())
-        step = Step((), job, context, Config())
+        step = Step((), job, context)
 
         foo(5, context, "fake", job=job, bar=step, step="herring")
         timing = utils.get_timings()[0]

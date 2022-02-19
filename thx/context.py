@@ -173,7 +173,7 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
 
     if needs_update(context, config):
         LOG.info("preparing virtualenv %s", context.venv)
-        yield VenvCreate(context)
+        yield VenvCreate(context, message="creating virtualenv")
 
         # create virtualenv
         prompt = f"thx-{context.python_version}"
@@ -199,10 +199,12 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             )
 
         # upgrade pip
+        yield VenvCreate(context, message="upgrading pip")
         pip = which("pip", context)
         await run_command([pip, "install", "-U", "pip"])
 
         # install requirements.txt
+        yield VenvCreate(context, message="installing requirements")
         requirements = project_requirements(config)
         if requirements:
             LOG.debug("installing deps from %s", requirements)
@@ -212,6 +214,7 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             await run_command(cmd)
 
         # install local project
+        yield VenvCreate(context, message="installing project")
         await run_command([pip, "install", "-U", config.root])
 
         # timestamp marker

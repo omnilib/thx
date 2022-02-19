@@ -46,7 +46,7 @@ class RunnerTest(TestCase):
         config = Config(values={"module": "alpha"})
         context = Context(Version("3.8"), Path(), Path())
         result = runner.render_command("frobfrob check {module}.tests", context, config)
-        self.assertEqual(["/opt/bin/frobfrob", "check", "alpha.tests"], result)
+        self.assertEqual(("/opt/bin/frobfrob", "check", "alpha.tests"), result)
 
     @patch("thx.runner.shutil.which", return_value=None)
     def test_prepare_job(self, which_mock: Mock) -> None:
@@ -60,17 +60,12 @@ class RunnerTest(TestCase):
         job = Job(name="foo", run=run)
 
         expected = [
+            runner.JobStep(cmd=("echo", "hello world"), job=job, context=context),
+            runner.JobStep(cmd=("flake8", "beta"), job=job, context=context),
             runner.JobStep(
-                cmd=["echo", "hello world"], job=job, context=context, config=config
-            ),
-            runner.JobStep(
-                cmd=["flake8", "beta"], job=job, context=context, config=config
-            ),
-            runner.JobStep(
-                cmd=["python", "-m", "beta.tests"],
+                cmd=("python", "-m", "beta.tests"),
                 job=job,
                 context=context,
-                config=config,
             ),
         ]
         result = list(runner.prepare_job(job, context, config))
@@ -82,7 +77,6 @@ class RunnerTest(TestCase):
             ["echo", "hello world"],
             Job("echo", ["echo 'hello world'"]),
             Context(Version("3.9"), Path(), Path()),
-            Config(),
         )
         result = await step
         self.assertIsInstance(result, Result)

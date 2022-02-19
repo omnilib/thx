@@ -3,17 +3,17 @@
 
 import logging
 import shutil
-import sys
 from functools import partial
 from typing import Any, cast, List, Optional, Sequence
 
 import click
+from rich.logging import RichHandler
 
 from . import __doc__
 from .__version__ import __version__
 from .config import load_config
 
-from .core import run
+from .core import run_rich
 from .types import Config, Options, Version
 from .utils import get_timings
 
@@ -102,9 +102,9 @@ def main(
     )
 
     logging.basicConfig(
-        stream=sys.stderr,
         level=logging.DEBUG if debug else logging.WARNING,
         format=log_format,
+        handlers=[RichHandler(rich_tracebacks=True)],
     )
 
 
@@ -125,7 +125,7 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if options.clean:
         ctx.invoke(clean)
 
-    results = run(options)  # do the thing
+    results = run_rich(options)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")
@@ -135,8 +135,6 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if any(result.error for result in results):
         click.secho("FAIL", fg="yellow", err=True)
         ctx.exit(1)
-    else:
-        click.secho("OK", fg="green", err=True)
 
 
 @main.command("clean")
