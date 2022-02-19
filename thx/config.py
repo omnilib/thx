@@ -74,7 +74,13 @@ def parse_job(name: str, data: Dict[str, Any]) -> Job:
             f"{data!r} given"
         )
 
-    return Job(name=name, run=run, requires=requires, once=once, parallel=parallel)
+    return Job(
+        name=name,
+        run=tuple(run),
+        requires=tuple(requires),
+        once=once,
+        parallel=parallel,
+    )
 
 
 def parse_jobs(data: Any) -> List[Job]:

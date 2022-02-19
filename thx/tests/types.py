@@ -30,24 +30,22 @@ class TypesTest(TestCase):
 
     def test_event_venv_create(self) -> None:
         ctx = self.fake_context()
-        event = types.VenvCreate(ctx)
+        event = types.VenvCreate(ctx, message="creating")
         self.assertEqual(ctx, event.context)
-        self.assertEqual("3.4> VenvCreate", str(event))
+        self.assertEqual("3.4> creating", str(event))
 
     def test_event_job_start(self) -> None:
-        config = types.Config(root=self._tdp)
         ctx = self.fake_context()
         job = types.Job("foo", ("/bin/echo", "bar"))
-        step = types.Step(("/bin/echo", "bar"), job, ctx, config)
+        step = types.Step(("/bin/echo", "bar"), job, ctx)
 
         event = types.Start(ctx, step)
         self.assertEqual("3.4 foo> /bin/echo bar", str(event))
 
     def test_event_job_result(self) -> None:
-        config = types.Config(root=self._tdp)
         ctx = self.fake_context()
         job = types.Job("foo", ("/bin/echo", "bar"))
-        step = types.Step(("/bin/echo", "bar"), job, ctx, config)
+        step = types.Step(("/bin/echo", "bar"), job, ctx)
 
         with self.subTest("success"):
             event = types.Result(

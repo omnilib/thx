@@ -376,9 +376,10 @@ class ContextTest(TestCase):
 
             pip = which_mock("pip", ctx)
 
-            expected = [VenvCreate(ctx), VenvReady(ctx)]
             events = [event async for event in context.prepare_virtualenv(ctx, config)]
-            self.assertListEqual(expected, events)
+            expected = [VenvReady(ctx)]
+            for event in expected:
+                self.assertIn(event, events)
 
             run_mock.assert_has_calls(
                 [
@@ -419,10 +420,9 @@ class ContextTest(TestCase):
                 event async for event in context.prepare_contexts(contexts, config)
             ]
             expected = [
-                VenvCreate(contexts[0]),
                 VenvReady(contexts[0]),
-                VenvCreate(contexts[1]),
                 VenvReady(contexts[1]),
             ]
-            self.assertListEqual(expected, events)
+            for event in expected:
+                self.assertIn(event, events)
             venv_mock.assert_has_calls([call(ctx, config) for ctx in contexts])

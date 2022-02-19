@@ -26,7 +26,7 @@ class ConfigError(ValueError):
     """Invalid configuration value"""
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Job:
     name: str
     run: Sequence[str]
@@ -53,7 +53,7 @@ class Config:
         self.default = tuple(d.casefold() for d in self.default)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Context:
     python_version: Version
     python_path: Path
@@ -88,12 +88,11 @@ class CommandResult:
         return self.exit_code != 0
 
 
-@dataclass
+@dataclass(frozen=True)
 class Step:
     cmd: Sequence[str]
     job: Job
     context: Context
-    config: Config
 
     def __await__(self) -> Generator[Any, None, "Result"]:
         return self.run().__await__()
@@ -112,12 +111,16 @@ class Event:
 
 @dataclass
 class VenvCreate(Event):
-    pass
+    message: str = ""
+
+    def __str__(self) -> str:
+        return f"{self.context.python_version}> {self.message}"
 
 
 @dataclass
 class VenvReady(Event):
-    pass
+    def __str__(self) -> str:
+        return f"{self.context.python_version}> ready"
 
 
 @dataclass
