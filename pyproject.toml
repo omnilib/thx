@@ -11,6 +11,7 @@ home-page = "https://github.com/jreese/thx"
 requires = [
     "aioitertools >= 0.10.0b1",
     "click >= 8.0",
+    "packaging >= 21.0",
     "rich >= 11.0.0",
     "tomli >= 1.0",
     "trailrunner >= 1.1",
@@ -80,4 +81,3 @@ run = [
     "python -m ufmt check {srcs}",
 ]
 parallel = true
-
