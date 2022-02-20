@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
-from typing import AsyncIterator, Dict, List, Optional, Sequence
+from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
 from aioitertools.asyncio import as_generated
 from packaging.version import Version
@@ -63,13 +63,15 @@ def runtime_version(binary: Path) -> Optional[Version]:
     return PYTHON_VERSIONS[binary]
 
 
-def find_runtime(version: Version, venv: Path) -> Optional[Path]:
-    if venv.is_dir():
+def find_runtime(
+    version: Version, venv: Optional[Path] = None
+) -> Tuple[Optional[Path], Optional[Version]]:
+    if venv and venv.is_dir():
         bin_dir = venv / "bin"
         if bin_dir.is_dir():
             binary_path_str = shutil.which("python", path=f"{bin_dir.as_posix()}")
             if binary_path_str:
-                return Path(binary_path_str)
+                return Path(binary_path_str), None
 
     # TODO: better way to find specific micro/pre/post versions?
     binary_names = [
@@ -88,9 +90,9 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
                 continue
 
             if version_match([binary_version], version):
-                return binary_path
+                return binary_path, binary_version
 
-    return None
+    return None, None
 
 
 @timed("resolve contexts")
@@ -103,13 +105,13 @@ def resolve_contexts(config: Config, options: Options) -> List[Context]:
     contexts: List[Context] = []
     missing_versions: List[Version] = []
     for version in config.versions:
-        venv = venv_path(config, version)
-        runtime_path = find_runtime(version, venv)
+        runtime_path, runtime_version = find_runtime(version)
 
-        if runtime_path is None:
+        if runtime_path is None or runtime_version is None:
             missing_versions.append(version)
         else:
-            contexts.append(Context(version, runtime_path, venv))
+            venv = venv_path(config, runtime_version)
+            contexts.append(Context(runtime_version, runtime_path, venv))
 
     if missing_versions:
         LOG.warning("missing Python versions: %r", [str(v) for v in missing_versions])
@@ -179,7 +181,7 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             import venv
 
             venv.create(context.venv, clear=True, prompt=prompt, with_pip=True)
-            new_python_path = find_runtime(context.python_version, context.venv)
+            new_python_path, _ = find_runtime(context.python_version, context.venv)
             assert new_python_path is not None
             context.python_path = new_python_path
 
