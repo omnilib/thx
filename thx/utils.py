@@ -28,9 +28,9 @@ class timed:
     duration: int = field(default=0, init=False)
 
     message: str = field()
-    context: Optional[Context] = None
-    job: Optional[Job] = None
-    step: Optional[Step] = None
+    context: Optional[Context] = field(default=None, compare=False)
+    job: Optional[Job] = field(default=None, compare=False)
+    step: Optional[Step] = field(default=None, compare=False)
 
     def __str__(self) -> str:
         message = self.message
