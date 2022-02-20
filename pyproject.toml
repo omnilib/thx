@@ -15,6 +15,7 @@ requires = [
     "rich >= 11.0.0",
     "tomli >= 1.0",
     "trailrunner >= 1.1",
+    "typing_extensions >= 4.0; python_version < '3.11'",
 ]
 requires-python = ">=3.7"
 classifiers = [
