@@ -23,14 +23,21 @@ A simple, composable command runner for Python projects.
 Goals
 -----
 
-    "makefiles, but with pyproject.toml"
+    "like makefiles, but in pyproject.toml"
 
     -- author
 
-`thx` should be capable of running one or more jobs or commands, configured via simple
-and obvious options in the PEP 517 standardized `pyproject.toml`. Jobs are defined as
-simple strings, or lists of strings, each representing a command to be run, with basic
-interpolation of values.
+`thx` is capable of running one or more jobs, configured via simple options in the
+PEP 517 standardized `pyproject.toml`. Jobs can be run on multiple Python versions at
+once, and individual steps can be executed in parallel for faster results.
+
+.. raw:: html
+
+    <script id="asciicast-3zNkVeBxbQrwIDK5EbydnjDyV" src="https://asciinema.org/a/3zNkVeBxbQrwIDK5EbydnjDyV.js" async></script>
+
+.. literalinclude:: ../pyproject.toml
+    :language: toml
+    :start-after: [tool.thx]
 
 .. code-block:: toml
 
