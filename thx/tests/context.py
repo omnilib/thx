@@ -5,7 +5,7 @@ import platform
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AsyncIterator, List, Optional, Sequence
+from typing import AsyncIterator, List, Optional, Sequence, Tuple
 from unittest import TestCase
 from unittest.mock import call, Mock, patch
 
@@ -127,7 +127,7 @@ class ContextTest(TestCase):
                     venv = context.venv_path(config, version)
 
                     expected = Path(f"/fake/bin/python{version.major}")
-                    result = context.find_runtime(version, venv)
+                    result, _ = context.find_runtime(version, venv)
                     self.assertEqual(expected, result)
 
                     which_mock.assert_has_calls(
@@ -159,7 +159,7 @@ class ContextTest(TestCase):
                     venv = context.venv_path(config, version)
 
                     expected = None
-                    result = context.find_runtime(version, venv)
+                    result, _ = context.find_runtime(version, venv)
                     self.assertEqual(expected, result)
 
                     which_mock.assert_has_calls(
@@ -191,7 +191,7 @@ class ContextTest(TestCase):
                     venv = context.venv_path(config, version)
 
                     expected = None
-                    result = context.find_runtime(version, venv)
+                    result, _ = context.find_runtime(version, venv)
                     self.assertEqual(expected, result)
 
                     which_mock.assert_has_calls(
@@ -228,7 +228,7 @@ class ContextTest(TestCase):
                     (venv / "bin").mkdir(parents=True, exist_ok=True)
 
                     expected = venv / "bin" / "python"
-                    result = context.find_runtime(version, venv)
+                    result, _ = context.find_runtime(version, venv)
                     self.assertEqual(expected, result)
 
                     which_mock.assert_has_calls(
@@ -278,11 +278,13 @@ class ContextTest(TestCase):
 
             skipped_minors = (5, 128)
 
-            def fake_find_runtime(version: Version, venv: Path) -> Optional[Path]:
+            def fake_find_runtime(
+                version: Version, venv: Optional[Path] = None
+            ) -> Tuple[Optional[Path], Optional[Version]]:
                 if version.minor in skipped_minors:
-                    return None
+                    return None, None
 
-                return expected_runtimes[version]
+                return expected_runtimes[version], version
 
             runtime_mock.side_effect = fake_find_runtime
 
@@ -293,9 +295,7 @@ class ContextTest(TestCase):
             ]
             result = context.resolve_contexts(config, Options())
             self.assertListEqual(expected, result)
-            runtime_mock.assert_has_calls(
-                [call(version, expected_venvs[version]) for version in TEST_VERSIONS]
-            )
+            runtime_mock.assert_has_calls([call(version) for version in TEST_VERSIONS])
             log_mock.warning.assert_called_once()
 
     @async_test
