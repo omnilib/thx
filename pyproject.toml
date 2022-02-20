@@ -54,13 +54,13 @@ strict = true
 ignore_missing_imports = true
 
 [tool.thx]
-default = ["format", "html", "coverage", "lint"]
+default = ["format", "docs", "coverage", "lint"]
 module = "thx"
 srcs = "thx"
-python_versions = ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "4.0"]
+python_versions = ["3.7", "3.8", "3.9", "3.10"]
 
 [tool.thx.jobs]
-html = {run="sphinx-build -b html docs html", once=true}
+docs = {run="sphinx-build -b html docs html", once=true}
 format = {run="python -m ufmt format {srcs}", once=true}
 test = "python -m coverage run -m {module}.tests"
 
@@ -79,3 +79,4 @@ run = [
     "python -m ufmt check {srcs}",
 ]
 parallel = true
+
