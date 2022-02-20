@@ -11,9 +11,10 @@ from rich.logging import RichHandler
 
 from . import __doc__
 from .__version__ import __version__
+from .cli import RichRenderer
 from .config import load_config
 
-from .core import run_rich
+from .core import run
 from .types import Config, Options, Version
 from .utils import get_timings
 
@@ -125,7 +126,7 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if options.clean:
         ctx.invoke(clean)
 
-    results = run_rich(options)  # do the thing
+    results = run(options, render=RichRenderer())  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")
