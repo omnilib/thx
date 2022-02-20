@@ -17,7 +17,7 @@ from thx.utils import version_match
 
 from .runner import run_command, which
 
-from .types import Config, Context, Event, StrPath, VenvCreate, VenvReady
+from .types import Config, Context, Event, Options, StrPath, VenvCreate, VenvReady
 from .utils import timed
 
 LOG = logging.getLogger(__name__)
@@ -94,10 +94,8 @@ def find_runtime(version: Version, venv: Path) -> Optional[Path]:
 
 
 @timed("resolve contexts")
-def resolve_contexts(
-    config: Config, filter_version: Optional[Version] = None
-) -> List[Context]:
-    if not config.versions:
+def resolve_contexts(config: Config, options: Options) -> List[Context]:
+    if options.live or not config.versions:
         version = Version(platform.python_version())
         # defer resolving python path to after venv creation
         return [Context(version, Path(""), venv_path(config, version), live=True)]
@@ -119,8 +117,8 @@ def resolve_contexts(
     context_versions = [context.python_version for context in contexts]
     LOG.info("Available Python versions: %s", context_versions)
 
-    if filter_version is not None:
-        matched_versions = version_match(context_versions, filter_version)
+    if options.python is not None:
+        matched_versions = version_match(context_versions, options.python)
         contexts = [
             context
             for context in contexts

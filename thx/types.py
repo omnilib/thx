@@ -68,6 +68,7 @@ class Options:
     debug: bool = False
     jobs: List[str] = field(default_factory=list)
     python: Optional[Version] = None
+    live: bool = False
     clean: bool = False
     exit: bool = False
 

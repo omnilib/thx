@@ -99,7 +99,7 @@ def run(
     results: List[Result] = []
 
     config = options.config
-    contexts = resolve_contexts(config, options.python)
+    contexts = resolve_contexts(config, options)
 
     job_names = options.jobs
     if not job_names:

@@ -17,6 +17,7 @@ from ..types import (
     Config,
     Context,
     Event,
+    Options,
     StrPath,
     VenvCreate,
     VenvReady,
@@ -254,7 +255,7 @@ class ContextTest(TestCase):
                     live=True,
                 )
             ]
-            result = context.resolve_contexts(config)
+            result = context.resolve_contexts(config, Options())
             self.assertListEqual(expected, result)
             runtime_mock.assert_not_called()
 
@@ -290,7 +291,7 @@ class ContextTest(TestCase):
                 for version in TEST_VERSIONS
                 if version.minor not in skipped_minors
             ]
-            result = context.resolve_contexts(config)
+            result = context.resolve_contexts(config, Options())
             self.assertListEqual(expected, result)
             runtime_mock.assert_has_calls(
                 [call(version, expected_venvs[version]) for version in TEST_VERSIONS]
@@ -370,7 +371,7 @@ class ContextTest(TestCase):
             reqs.write_text("\n")
 
             config = Config(root=tdp)
-            ctx = context.resolve_contexts(config)[0]
+            ctx = context.resolve_contexts(config, Options(live=True))[0]
             self.assertTrue(ctx.live)
 
             pip = which_mock("pip", ctx)
