@@ -126,7 +126,8 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
     if options.clean:
         ctx.invoke(clean)
 
-    results = run(options, render=RichRenderer())  # do the thing
+    with RichRenderer() as renderer:
+        results = run(options, render=renderer)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")

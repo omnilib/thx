@@ -3,7 +3,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from rich.console import Group
 from rich.live import Live
@@ -23,7 +23,13 @@ class RichRenderer:
 
     def __post_init__(self) -> None:
         self.view = Live(auto_refresh=False)
+
+    def __enter__(self) -> "RichRenderer":
         self.view.__enter__()
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        self.view.__exit__(*args, **kwargs)
 
     def __call__(self, event: Event) -> None:
         venvs = self.venvs
