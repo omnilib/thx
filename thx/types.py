@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from shlex import quote
-from typing import Any, Generator, List, Mapping, Optional, Sequence, Union
+from typing import Any, Callable, Generator, List, Mapping, Optional, Sequence, Union
 
 from packaging.version import Version
 
@@ -19,6 +19,7 @@ __all__ = [
     "Version",
 ]
 
+Renderer = Callable[["Event"], None]
 StrPath = Union[str, Path]
 
 
