@@ -10,9 +10,12 @@ description-file = "README.rst"
 home-page = "https://github.com/jreese/thx"
 requires = [
     "aioitertools >= 0.10.0b1",
+    "click >= 8.0",
+    "packaging >= 21.0",
     "rich >= 11.0.0",
     "tomli >= 1.0",
     "trailrunner >= 1.1",
+    "typing_extensions >= 4.0; python_version < '3.11'",
 ]
 requires-python = ">=3.7"
 classifiers = [
@@ -79,4 +82,3 @@ run = [
     "python -m ufmt check {srcs}",
 ]
 parallel = true
-

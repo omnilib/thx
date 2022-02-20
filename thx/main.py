@@ -1,8 +1,10 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import asyncio
 import logging
 import shutil
+import sys
 from functools import partial
 from typing import Any, cast, List, Optional, Sequence
 
@@ -107,6 +109,9 @@ def main(
         format=log_format,
         handlers=[RichHandler(rich_tracebacks=True)],
     )
+
+    if sys.version_info < (3, 8) and sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 
 @main.result_callback()
