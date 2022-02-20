@@ -61,6 +61,7 @@ class ThxGroup(click.Group):
 @click.option("--benchmark", is_flag=True, default=None, help="Enable benchmarking")
 @click.option("--debug", is_flag=True, default=None, help="Enable debug output")
 @click.option("--clean", is_flag=True, help="Clean virtualenvs first")
+@click.option("--live", is_flag=True, help='Use the "live" Python runtime from thx')
 @click.option(
     "--python",
     "--py",
@@ -75,6 +76,7 @@ def main(
     benchmark: bool,
     debug: bool,
     clean: bool,
+    live: bool,
     python: Optional[Version],
 ) -> None:
     """
@@ -82,12 +84,16 @@ def main(
     """
     group = cast(ThxGroup, main)
 
+    if live and python:
+        raise click.UsageError("Cannot specify both --live and --python")
+
     ctx.ensure_object(Options)
     ctx.obj.config = group.config
-    ctx.obj.python = python
     ctx.obj.benchmark = benchmark
     ctx.obj.debug = debug
     ctx.obj.clean = clean
+    ctx.obj.live = live
+    ctx.obj.python = python
 
     log_format = (
         "%(levelname)s %(module)s:%(lineno)d: %(message)s"
