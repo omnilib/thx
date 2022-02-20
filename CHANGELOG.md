@@ -1,6 +1,22 @@
 thx
 ===
 
+v0.3.0
+------
+
+Feature release
+
+- Better CLI presentation of jobs and results using Rich (#14)
+- New option `--live` to skip version detection (#15)
+- Better tracking of runtime versions available (#15)
+- Fixed benchmarking on Windows due to lack of time precision
+
+```
+$ git shortlog -s v0.2.0...v0.3.0
+     8	John Reese
+```
+
+
 v0.2.0
 ------
 
