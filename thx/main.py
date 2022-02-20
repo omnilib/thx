@@ -120,7 +120,7 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
         return
 
     if not options.jobs and not options.config.default:
-        ctx.invoke(list_commands)
+        ctx.invoke(list_jobs)
         ctx.exit(1)
 
     if options.clean:
@@ -153,11 +153,34 @@ def clean(ctx: click.Context) -> None:
     ctx.obj.exit = True
 
 
+@main.command("dump-config")
+@click.pass_context
+def dump_config(ctx: click.Context) -> None:
+    from rich.pretty import pprint
+
+    options: Options = ctx.obj
+    pprint(options.config)
+
+    ctx.obj.exit = True
+
+
 @main.command("list")
 @click.pass_context
-def list_commands(ctx: click.Context) -> None:
+def list_jobs(ctx: click.Context) -> None:
     """
     List available commands and exit.
     """
-    print("<list commands here>")
+    options: Options = ctx.obj
+
+    import rich
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("job name")
+    table.add_column("requires")
+    table.add_column("steps")
+    for job in options.config.jobs.values():
+        table.add_row(job.name, ",".join(job.requires), "\n".join(job.run))
+    rich.print(table)
+
     ctx.obj.exit = True
