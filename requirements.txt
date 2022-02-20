@@ -1,4 +1,5 @@
 aioitertools==v0.10.0b1
+click==8.0.4
 rich==11.2.0
 tomli==1.2.3
 trailrunner==1.1.2
