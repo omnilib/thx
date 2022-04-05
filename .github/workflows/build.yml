@@ -25,7 +25,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - name: Install
-        run: pip install .
+        run: |
+          pip install -U pip -r requirements.txt
+          pip install .
       - name: Test
         run: thx --live test
       - name: Lint
