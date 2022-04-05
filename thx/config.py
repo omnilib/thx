@@ -8,6 +8,8 @@ import tomli
 from packaging.version import Version
 from trailrunner.core import project_root
 
+from thx.core import watch
+
 from .types import Config, ConfigError, Job
 
 
@@ -108,6 +110,12 @@ def validate_config(config: Config) -> Config:
                     f"undefined job {require!r}"
                 )
 
+    for path in config.watch_paths:
+        if path.is_absolute():
+            raise ValueError(
+                f"Option tool.thx.watch_paths: absolute paths not supported ({path!r})"
+            )
+
     return config
 
 
@@ -139,6 +147,13 @@ def load_config(path: Optional[Path] = None) -> Config:
     requirements: List[str] = ensure_listish(
         data.pop("requirements", None), "tool.thx.requirements"
     )
+    watch_paths: List[Path] = [
+        Path(p)
+        for p in ensure_listish(
+            data.pop("watch_paths", None),
+            "tool.thx.watch_paths",
+        )
+    ]
 
     return validate_config(
         Config(
@@ -148,5 +163,6 @@ def load_config(path: Optional[Path] = None) -> Config:
             values=data,
             versions=versions,
             requirements=requirements,
+            watch_paths=watch_paths,
         )
     )
