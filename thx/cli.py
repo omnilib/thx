@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 from collections import defaultdict
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -10,8 +11,20 @@ from rich.live import Live
 from rich.text import Text
 from rich.tree import Tree
 
-from .types import Context, Event, Job, JobEvent, Result, Step, VenvCreate, VenvReady
+from .types import (
+    Abort,
+    Context,
+    Event,
+    Fail,
+    Job,
+    JobEvent,
+    Result,
+    Step,
+    VenvCreate,
+    VenvReady,
+)
 
+LOG = logging.getLogger(__name__)
 
 @dataclass
 class RichRenderer:
@@ -34,14 +47,25 @@ class RichRenderer:
     def __call__(self, event: Event) -> None:
         venvs = self.venvs
         latest = self.latest
-        context = event.context
 
+        if isinstance(event, Abort):
+            self.venvs.clear()
+            self.latest.clear()
+            self.view.update(Text(""), refresh=True)
+            return
+
+        if isinstance(event, Fail):
+            group: Group = self.view.get_renderable()
+            group.renderables.append(Tree("FAIL", style="red"))
+            self.view.update(group, refresh=True)
+            return
+        
         if isinstance(event, (VenvCreate, VenvReady)):
-            venvs[context] = event
+            venvs[event.context] = event
         elif isinstance(event, JobEvent):
             step = event.step
             job = step.job
-            latest[job][context][step] = event
+            latest[job][event.context][step] = event
 
         trees: List[Tree] = []
 

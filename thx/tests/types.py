@@ -24,9 +24,9 @@ class TypesTest(TestCase):
 
     def test_event_base(self) -> None:
         ctx = self.fake_context()
-        event = types.Event(ctx)
+        event = types.ContextEvent(ctx)
         self.assertEqual(ctx, event.context)
-        self.assertEqual("3.4> Event", str(event))
+        self.assertEqual("3.4> ContextEvent", str(event))
 
     def test_event_venv_create(self) -> None:
         ctx = self.fake_context()

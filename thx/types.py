@@ -49,6 +49,7 @@ class Config:
     values: Mapping[str, str] = field(default_factory=dict)
     versions: Sequence[Version] = field(default_factory=list)
     requirements: Sequence[str] = field(default_factory=list)
+    watch_paths: Sequence[Path] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)
@@ -70,6 +71,7 @@ class Options:
     jobs: List[str] = field(default_factory=list)
     python: Optional[Version] = None
     live: bool = False
+    watch: bool = False
     clean: bool = False
     exit: bool = False
 
@@ -104,6 +106,22 @@ class Step:
 
 @dataclass
 class Event:
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
+
+@dataclass
+class Abort(Event):
+    pass
+
+
+@dataclass
+class Fail(Event):
+    pass
+
+
+@dataclass
+class ContextEvent(Event):
     context: Context
 
     def __str__(self) -> str:
@@ -111,7 +129,7 @@ class Event:
 
 
 @dataclass
-class VenvCreate(Event):
+class VenvCreate(ContextEvent):
     message: str = ""
 
     def __str__(self) -> str:
@@ -119,13 +137,13 @@ class VenvCreate(Event):
 
 
 @dataclass
-class VenvReady(Event):
+class VenvReady(ContextEvent):
     def __str__(self) -> str:
         return f"{self.context.python_version}> ready"
 
 
 @dataclass
-class JobEvent(Event):
+class JobEvent(ContextEvent):
     step: Step
 
     def __str__(self) -> str:

@@ -16,7 +16,7 @@ from .__version__ import __version__
 from .cli import RichRenderer
 from .config import load_config
 
-from .core import run
+from .core import run, watch
 from .types import Config, Options, Version
 from .utils import get_timings
 
@@ -61,10 +61,11 @@ class ThxGroup(click.Group):
 
 
 @click.group(cls=ThxGroup, chain=True, invoke_without_command=True, help=__doc__)
-@click.option("--benchmark", is_flag=True, default=None, help="Enable benchmarking")
-@click.option("--debug", is_flag=True, default=None, help="Enable debug output")
+@click.option("--benchmark", is_flag=True, help="Enable benchmarking")
+@click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--clean", is_flag=True, help="Clean virtualenvs first")
 @click.option("--live", is_flag=True, help='Use the "live" Python runtime from thx')
+@click.option("--watch", "-w", is_flag=True)
 @click.option(
     "--python",
     "--py",
@@ -80,6 +81,7 @@ def main(
     debug: bool,
     clean: bool,
     live: bool,
+    watch: bool,
     python: Optional[Version],
 ) -> None:
     """
@@ -96,6 +98,7 @@ def main(
     ctx.obj.debug = debug
     ctx.obj.clean = clean
     ctx.obj.live = live
+    ctx.obj.watch = watch
     ctx.obj.python = python
 
     log_format = (
@@ -132,14 +135,17 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
         ctx.invoke(clean)
 
     with RichRenderer() as renderer:
-        results = run(options, render=renderer)  # do the thing
+        if options.watch:
+            results = watch(options, render=renderer)
+        else:
+            results = run(options, render=renderer)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")
         for timing in get_timings():
             click.echo(f"  {timing}")
 
-    if any(result.error for result in results):
+    if not results or any(result.error for result in results):
         click.secho("FAIL", fg="yellow", err=True)
         ctx.exit(1)
 

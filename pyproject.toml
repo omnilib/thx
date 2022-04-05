@@ -16,6 +16,7 @@ requires = [
     "tomli >= 1.0",
     "trailrunner >= 1.1",
     "typing_extensions >= 4.0; python_version < '3.11'",
+    "watchdog >= 2.1",
 ]
 requires-python = ">=3.7"
 classifiers = [
@@ -61,6 +62,7 @@ default = ["format", "docs", "coverage", "lint"]
 module = "thx"
 srcs = "thx"
 python_versions = ["3.7", "3.8", "3.9", "3.10"]
+watch_paths = ["pyproject.toml", "requirements.txt", "requirements-dev.txt", "thx"]
 
 [tool.thx.jobs]
 docs = {run="sphinx-build -b html docs html", once=true}
