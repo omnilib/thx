@@ -1,5 +1,5 @@
 aioitertools==v0.10.0b1
-click==8.0.4
+click==8.1.2
 packaging==21.3
 rich==11.2.0
 tomli==2.0.1
