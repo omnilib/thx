@@ -1,8 +1,8 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -12,12 +12,12 @@ from rich.text import Text
 from rich.tree import Tree
 
 from .types import (
-    Abort,
     Context,
     Event,
     Fail,
     Job,
     JobEvent,
+    Reset,
     Result,
     Step,
     VenvCreate,
@@ -25,6 +25,7 @@ from .types import (
 )
 
 LOG = logging.getLogger(__name__)
+
 
 @dataclass
 class RichRenderer:
@@ -45,21 +46,21 @@ class RichRenderer:
         self.view.__exit__(*args, **kwargs)
 
     def __call__(self, event: Event) -> None:
-        venvs = self.venvs
-        latest = self.latest
-
-        if isinstance(event, Abort):
+        if isinstance(event, Reset):
             self.venvs.clear()
             self.latest.clear()
             self.view.update(Text(""), refresh=True)
             return
+
+        venvs = self.venvs
+        latest = self.latest
 
         if isinstance(event, Fail):
             group: Group = self.view.get_renderable()
             group.renderables.append(Tree("FAIL", style="red"))
             self.view.update(group, refresh=True)
             return
-        
+
         if isinstance(event, (VenvCreate, VenvReady)):
             venvs[event.context] = event
         elif isinstance(event, JobEvent):

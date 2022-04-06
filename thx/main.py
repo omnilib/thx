@@ -136,18 +136,16 @@ def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -
 
     with RichRenderer() as renderer:
         if options.watch:
-            results = watch(options, render=renderer)
+            exit_code = watch(options, render=renderer)
         else:
-            results = run(options, render=renderer)  # do the thing
+            exit_code = run(options, render=renderer)  # do the thing
 
     if options.benchmark:
         click.echo("\nbenchmark timings:\n------------------")
         for timing in get_timings():
             click.echo(f"  {timing}")
 
-    if not results or any(result.error for result in results):
-        click.secho("FAIL", fg="yellow", err=True)
-        ctx.exit(1)
+    ctx.exit(exit_code)
 
 
 @main.command("clean")

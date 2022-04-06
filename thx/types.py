@@ -111,7 +111,7 @@ class Event:
 
 
 @dataclass
-class Abort(Event):
+class Reset(Event):
     pass
 
 
