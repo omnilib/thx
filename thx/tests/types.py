@@ -23,6 +23,10 @@ class TypesTest(TestCase):
         return types.Context(FAKE_VERSION, self._tdp / "bin" / "python", self._tdp)
 
     def test_event_base(self) -> None:
+        event = types.Event()
+        self.assertEqual("Event", str(event))
+
+    def test_event_context(self) -> None:
         ctx = self.fake_context()
         event = types.ContextEvent(ctx)
         self.assertEqual(ctx, event.context)
@@ -33,6 +37,12 @@ class TypesTest(TestCase):
         event = types.VenvCreate(ctx, message="creating")
         self.assertEqual(ctx, event.context)
         self.assertEqual("3.4> creating", str(event))
+
+    def test_event_venv_ready(self) -> None:
+        ctx = self.fake_context()
+        event = types.VenvReady(ctx)
+        self.assertEqual(ctx, event.context)
+        self.assertEqual("3.4> ready", str(event))
 
     def test_event_job_start(self) -> None:
         ctx = self.fake_context()

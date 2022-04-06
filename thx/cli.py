@@ -4,7 +4,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from rich.console import Group
 from rich.live import Live
@@ -45,7 +45,7 @@ class RichRenderer:
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
         self.view.__exit__(*args, **kwargs)
 
-    def __call__(self, event: Event) -> None:
+    def __call__(self, event: Optional[Event]) -> None:
         if isinstance(event, Reset):
             self.venvs.clear()
             self.latest.clear()

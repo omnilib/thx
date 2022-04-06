@@ -1,6 +1,7 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -84,6 +85,29 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
+    def test_tiny_config_load_from_cwd(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.thx]
+            jobs = {hello = "echo hello"}
+
+            [tool.black]
+            line_length = 37
+            """
+        ) as td:
+            cwd = Path.cwd()
+
+            try:
+                os.chdir(td)
+                expected = Config(
+                    root=td,
+                    jobs={"hello": Job(name="hello", run=("echo hello",))},
+                )
+                result = load_config()
+                self.assertEqual(expected, result)
+            finally:
+                os.chdir(cwd)
+
     def test_simple_config(self) -> None:
         with fake_pyproject(
             """
@@ -120,6 +144,7 @@ class ConfigTest(TestCase):
             [tool.thx]
             default = ["test", "lint"]
             module = "foobar"
+            watch_paths = ["foobar", "pyproject.toml"]
 
             [tool.thx.jobs]
             format = ["black {module}"]
@@ -158,6 +183,7 @@ class ConfigTest(TestCase):
                     ),
                 },
                 values={"module": "foobar"},
+                watch_paths=[Path("foobar"), Path("pyproject.toml")],
             )
             result = load_config(td)
             self.assertDictEqual(expected.jobs, result.jobs)
@@ -222,6 +248,16 @@ class ConfigTest(TestCase):
                 """
                 [tool.thx]
                 default = true
+                """
+            ) as td:
+                load_config(td)
+
+    def test_bad_value_watch_paths(self) -> None:
+        with self.assertRaisesRegex(ConfigError, "tool.thx.watch_paths"):
+            with fake_pyproject(
+                """
+                [tool.thx]
+                watch_paths = ["/foo"]
                 """
             ) as td:
                 load_config(td)
