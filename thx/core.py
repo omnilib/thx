@@ -128,8 +128,7 @@ def run(
             job_names.extend(config.default)
         else:
             LOG.warning("no jobs to run")
-            render(Fail())
-            return []
+            return 1
 
     jobs = resolve_jobs(job_names, config)
 
@@ -221,7 +220,7 @@ def watch(
     config = options.config
     if not config.watch_paths:
         LOG.error("No configured paths to watch (tool.thx.watch_paths)")
-        return []
+        return 1
 
     contexts = resolve_contexts(config, options)
 
@@ -231,7 +230,7 @@ def watch(
             job_names.extend(config.default)
         else:
             LOG.warning("no jobs to run")
-            return []
+            return 1
 
     jobs = resolve_jobs(job_names, config)
 

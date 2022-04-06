@@ -112,7 +112,7 @@ def validate_config(config: Config) -> Config:
 
     for path in config.watch_paths:
         if path.is_absolute():
-            raise ValueError(
+            raise ConfigError(
                 f"Option tool.thx.watch_paths: absolute paths not supported ({path!r})"
             )
 
