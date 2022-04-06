@@ -3,9 +3,10 @@
 
 import asyncio
 import logging
+import signal
 from re import A
 from time import monotonic_ns
-from typing import AsyncIterable, AsyncIterator, List, Optional, Sequence
+from typing import AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
 
 from aioitertools.asyncio import as_generated
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -15,7 +16,6 @@ from .context import prepare_contexts, resolve_contexts
 
 from .runner import prepare_job
 from .types import (
-    Abort,
     Config,
     Context,
     Event,
@@ -23,13 +23,17 @@ from .types import (
     Job,
     Options,
     Renderer,
+    Reset,
     Result,
     Start,
     Step,
 )
 from .utils import timed
 
+DEBOUNCE = 100_000_000  # delay in ns to wait for filesystem to settle down
 LOG = logging.getLogger(__name__)
+
+logging.getLogger("fsevents").setLevel(logging.WARNING)
 
 
 def resolve_jobs(names: Sequence[str], config: Config) -> Sequence[Job]:
@@ -78,7 +82,7 @@ async def run_job_on_context(
 
 async def run_jobs(
     jobs: Sequence[Job], contexts: Sequence[Context], config: Config
-) -> AsyncIterator[Event]:
+) -> AsyncGenerator[Event, None]:
     if all(job.once for job in jobs):
         LOG.debug("all jobs have once=true, trimming contexts")
         contexts = contexts[0:1]
@@ -112,7 +116,7 @@ async def run_jobs(
 def run(
     options: Options,
     render: Renderer = print,
-) -> List[Result]:
+) -> int:
     results: List[Result] = []
 
     config = options.config
@@ -124,6 +128,7 @@ def run(
             job_names.extend(config.default)
         else:
             LOG.warning("no jobs to run")
+            render(Fail())
             return []
 
     jobs = resolve_jobs(job_names, config)
@@ -136,7 +141,12 @@ def run(
                 results.append(event)
 
     asyncio.run(runner())
-    return results
+
+    if any(result.error for result in results):
+        render(Fail())
+        return 1
+
+    return 0
 
 
 class ThxWatchdogHandler(FileSystemEventHandler):
@@ -152,6 +162,7 @@ class ThxWatchdogHandler(FileSystemEventHandler):
         self.__jobs = jobs
         self.__render = render
         self.__last_event = monotonic_ns()
+        self.__running = True
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         if "__pycache__" in event.src_path:
@@ -159,55 +170,53 @@ class ThxWatchdogHandler(FileSystemEventHandler):
         LOG.debug("detected filesystem event %s", event)
         self.__last_event = monotonic_ns()
 
-    async def runner_one(self) -> None:
-        results: List[Result] = []
+    def signal(self, *args) -> None:
+        LOG.warning("ctrl-c %s", args)
+        self.__running = False
 
-        async for event in run_jobs(self.__jobs, self.__contexts, self.__config):
+    def render(self, event: Event) -> None:
+        if self.__running:
             self.__render(event)
 
-            if isinstance(event, Result):
-                results.append(event)
+    async def runner(self) -> int:
+        exit_code = 0
+        results: List[Result] = []
 
-        return results
+        while self.__running:
+            start = monotonic_ns()
 
-    async def runner(self) -> None:
-        task: Optional[asyncio.Task] = None
-        last_run = 0
+            exit_code = 0
+            results.clear()
+            self.render(Reset())
+            gen = run_jobs(self.__jobs, self.__contexts, self.__config)
+            try:
+                while self.__running:
+                    event = await gen.asend(None)
+                    self.render(event)
 
-        while True:
-            if self.__last_event > last_run + 50_000_000:
-                last_run = monotonic_ns()
+                    if isinstance(event, Result):
+                        results.append(event)
 
-                if task and not task.done():
-                    LOG.debug("canceling %s", task)
-                    task.cancel()
-                    try:
-                        await task
-                    except Exception as e:
-                        LOG.debug(e)
+                    now = monotonic_ns()
+                    if self.__last_event > start and now > self.__last_event + DEBOUNCE:
+                        await gen.aclose()
 
-                LOG.debug("starting new run")
-                self.__render(Abort())
-                task = asyncio.create_task(self.runner_one())
+            except StopAsyncIteration:
+                if any(result.error for result in results):
+                    self.render(Fail())
+                    exit_code = 1
 
-            if task and task.done():
-                try:
-                    results = await task
-                    if any(result.error for result in results):
-                        self.__render(Fail())
-                except Exception as e:
-                    LOG.exception("exception in task")
-                finally:
-                    task = None
+            while self.__running and start > self.__last_event:
+                await asyncio.sleep(0.05)
 
-            await asyncio.sleep(0.05)
+        return exit_code
 
 
 def watch(
     options: Options,
     render: Renderer = print,
-) -> List[Result]:
-    results: List[Result] = []
+) -> int:
+    exit_code: int = 0
 
     config = options.config
     if not config.watch_paths:
@@ -235,9 +244,11 @@ def watch(
 
     try:
         observer.start()
-        asyncio.run(handler.runner())
+        loop = asyncio.get_event_loop()
+        loop.add_signal_handler(signal.SIGINT, handler.signal)
+        exit_code = loop.run_until_complete(handler.runner())
     finally:
         observer.stop()
         observer.join()
 
-    return results
+    return exit_code
