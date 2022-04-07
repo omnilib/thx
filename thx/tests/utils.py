@@ -1,6 +1,7 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import asyncio
 import time
 from pathlib import Path
 from typing import Any, List, Tuple
@@ -10,6 +11,7 @@ from .. import utils
 from ..types import Context, Job, Step, Version
 
 from .context import TEST_VERSIONS
+from .helper import async_test
 
 
 class UtilTest(TestCase):
@@ -47,6 +49,23 @@ class UtilTest(TestCase):
         self.assertEqual(job, timing.job)
         self.assertEqual(step, timing.step)
         self.assertRegex(str(timing), r"test message 3.8 foo \(\) -> \s+ \d+ ms")
+
+    @async_test
+    async def test_timed_async_decorator(self) -> None:
+        @utils.timed("test message")
+        async def foo(value: int, *args: Any, **kwargs: Any) -> int:
+            await asyncio.sleep(0.02)
+            return value * 2
+
+        job = Job("foo", ())
+
+        await foo(9, job=job)
+        timings = utils.get_timings()
+
+        self.assertEqual(1, len(timings))
+        timing = timings[0]
+        self.assertEqual("test message", timing.message)
+        self.assertEqual(job, timing.job)
 
     def test_version_match(self) -> None:
         test_data: Tuple[Tuple[str, List[Version]], ...] = (
