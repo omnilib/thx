@@ -1,6 +1,23 @@
 thx
 ===
 
+v0.4.0a1
+--------
+
+Alpha release
+
+- Implemented 'list' and 'dump-config' commands
+- Added `--watch` mode
+- Added `job.show_output` flag
+- Support for Windows cmd.exe
+
+```
+$ git shortlog -s v0.3.0...v0.4.0a1
+    25	John Reese
+    11	dependabot[bot]
+```
+
+
 v0.3.0
 ------
 
