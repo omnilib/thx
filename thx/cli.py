@@ -13,6 +13,7 @@ from rich.tree import Tree
 
 from .types import (
     Context,
+    ContextEvent,
     Event,
     Fail,
     Job,
@@ -46,6 +47,8 @@ class RichRenderer:
         self.view.__exit__(*args, **kwargs)
 
     def __call__(self, event: Optional[Event]) -> None:
+        assert isinstance(event, Event), "must be a thx.Event"
+
         if isinstance(event, Reset):
             self.venvs.clear()
             self.latest.clear()
