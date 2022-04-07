@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import platform
 import signal
 from time import monotonic_ns
 from typing import AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
@@ -243,7 +244,8 @@ def watch(
     try:
         observer.start()
         loop = asyncio.get_event_loop()
-        loop.add_signal_handler(signal.SIGINT, handler.signal)
+        if platform.system() != "Windows":
+            loop.add_signal_handler(signal.SIGINT, handler.signal)
         exit_code = loop.run_until_complete(handler.runner())
     finally:
         observer.stop()
