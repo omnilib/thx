@@ -74,8 +74,8 @@ class RunnerTest(TestCase):
     @async_test
     async def test_job_echo(self) -> None:
         step = runner.JobStep(
-            ["echo", "hello world"],
-            Job("echo", ["echo 'hello world'"]),
+            ["python", "-c", "print('hello world')"],
+            Job("echo", ["python -c \"print('hello world')\""]),
             Context(Version("3.9"), Path(), Path()),
         )
         result = await step
