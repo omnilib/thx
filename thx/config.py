@@ -2,13 +2,11 @@
 # Licensed under the MIT License
 
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
 import tomli
 from packaging.version import Version
 from trailrunner.core import project_root
-
-from thx.core import watch
 
 from .types import Config, ConfigError, Job
 
@@ -33,7 +31,7 @@ def ensure_listish(value: Any, key: str) -> List[str]:
         result = []
     elif isinstance(value, str):
         result = [value]
-    elif isinstance(value, Sequence):
+    elif isinstance(value, (Iterable, Sequence)):
         result = list(value)
     else:
         raise ConfigError(

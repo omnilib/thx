@@ -9,7 +9,7 @@ from textwrap import dedent
 from typing import Iterator, Optional
 from unittest import TestCase
 
-from ..config import load_config
+from ..config import ensure_dict, ensure_listish, load_config
 from ..types import Config, ConfigError, Job
 
 
@@ -28,6 +28,24 @@ def fake_pyproject(content: Optional[str]) -> Iterator[Path]:
 
 class ConfigTest(TestCase):
     maxDiff = None
+
+    def test_ensure_dict(self) -> None:
+        self.assertEqual({}, ensure_dict(None, "foo"))
+        self.assertEqual({1: 1, 2: 2}, ensure_dict({1: 1, 2: 2}, "foo"))
+
+        with self.assertRaises(ConfigError):
+            ensure_dict(37, "foo")
+
+    def test_ensure_listish(self) -> None:
+        self.assertEqual([], ensure_listish(None, "foo"))
+        self.assertEqual(["hello"], ensure_listish("hello", "foo"))
+        self.assertEqual(["a", "b", "c"], ensure_listish(("a", "b", "c"), "foo"))
+
+        with self.assertRaises(ConfigError):
+            ensure_listish(37, "foo")
+
+        with self.assertRaises(ConfigError):
+            ensure_listish((1, 2, 3), "foo")
 
     def test_no_pyproject(self) -> None:
         with fake_pyproject(None) as td:
@@ -238,6 +256,16 @@ class ConfigTest(TestCase):
                 """
                 [tool.thx]
                 jobs = ["foo", "bar"]
+                """
+            ) as td:
+                load_config(td)
+
+    def test_bad_value_jobs_float(self) -> None:
+        with self.assertRaisesRegex(ConfigError, "Job 'foo' must be.+37 given"):
+            with fake_pyproject(
+                """
+                [tool.thx.jobs]
+                foo = 37
                 """
             ) as td:
                 load_config(td)

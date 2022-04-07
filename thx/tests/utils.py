@@ -18,6 +18,15 @@ class UtilTest(TestCase):
     def setUp(self) -> None:
         utils.TIMINGS.clear()
 
+    def test_timed_str(self) -> None:
+        timing = utils.timed(message="hello")
+        self.assertEqual("hello ->  (not started)", str(timing))
+
+        with timing:
+            self.assertEqual("hello ->  (started)", str(timing))
+
+        self.assertRegex(str(timing), r"hello ->\s+\d+ ms")
+
     def test_timed_decorator(self) -> None:
         @utils.timed("test message")
         def foo(value: int, *args: Any, **kwargs: Any) -> int:
@@ -57,9 +66,11 @@ class UtilTest(TestCase):
             await asyncio.sleep(0.02)
             return value * 2
 
+        context = Context(Version("3.8"), Path(), Path())
         job = Job("foo", ())
+        step = Step((), job, context)
 
-        await foo(9, job=job)
+        await foo(9, context=context, job=job, step=step)
         timings = utils.get_timings()
 
         self.assertEqual(1, len(timings))
@@ -76,6 +87,10 @@ class UtilTest(TestCase):
             ("3.9.0", [Version("3.9.0b1")]),
             ("3.9.0b1", [Version("3.9.0b1")]),
             ("3.9.0b2", []),
+            ("3.11.0.post1", [Version("3.11.0.post1")]),
+            ("3.11.0.post3", []),
+            ("3.12.3dev4", [Version("3.12.3dev4")]),
+            ("3.12.3dev5", []),
             (
                 "3",
                 [
@@ -87,6 +102,8 @@ class UtilTest(TestCase):
                     Version("3.9.0b1"),
                     Version("3.10.42"),
                     Version("3.11.0a4"),
+                    Version("3.11.0.post1"),
+                    Version("3.12.3dev4"),
                 ],
             ),
             ("4", [Version("4.0"), Version("4.128.1337")]),
