@@ -250,6 +250,27 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertDictEqual(expected.jobs, result.jobs)
 
+    def test_job_defaults_show_output(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.thx.jobs.foo]
+            run = []
+
+            [tool.thx.jobs.bar]
+            run = []
+            show_output = true
+            """
+        ) as td:
+            expected = Config(
+                root=td,
+                jobs={
+                    "foo": Job(name="foo", run=(), show_output=False),
+                    "bar": Job(name="bar", run=(), show_output=True),
+                },
+            )
+            result = load_config(td)
+            self.assertDictEqual(expected.jobs, result.jobs)
+
     def test_bad_value_jobs(self) -> None:
         with self.assertRaisesRegex(ConfigError, "tool.thx.jobs"):
             with fake_pyproject(
