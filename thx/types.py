@@ -35,6 +35,7 @@ class Job:
     once: bool = False
     parallel: bool = False
     isolated: bool = False
+    show_output: bool = False
 
     def __post_init__(self) -> None:
         self.name = self.name.casefold()

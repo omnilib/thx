@@ -95,25 +95,33 @@ class RichRenderer:
                     text = Text(str(event))
                     if isinstance(event, Result):
                         text.stylize("green" if event.success else "red")
-                        if event.error:
+                        if event.error or job.show_output:
                             text.append("\n", style="")
                             text.append(event.stdout, style="")
                             text.append("\n", style="")
                             text.append(event.stderr, style="")
+                        if event.error:
                             context_success = False
                     else:
                         context_success = False
                     context_tree.add(text)
 
                 if context_success:
-                    tree.add(Text(f"{context.python_version} OK", style="green"))
+                    context_tree.label = Text(
+                        f"{context.python_version} OK", style="green"
+                    )
+                    if not job.show_output:
+                        pass  # context_tree.expanded = False
                 else:
                     job_success = False
-                    tree.add(context_tree)
+
+                tree.add(context_tree)
 
             if job_success:
-                trees.append(Tree(f"{job.name} OK", style="green"))
-            else:
-                trees.append(tree)
+                tree.label = Text(f"{job.name} OK", style="green")
+                if not job.show_output:
+                    tree.expanded = False
+
+            trees.append(tree)
 
         self.view.update(Group(*trees), refresh=True)
