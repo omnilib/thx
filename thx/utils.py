@@ -89,8 +89,9 @@ class timed:
 
             return wrapped
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> "timed":
         self.start = monotonic_ns()
+        return self
 
     def __exit__(self, *args: Any) -> None:
         now = monotonic_ns()
@@ -119,8 +120,6 @@ def version_match(versions: List[Version], target: Version) -> List[Version]:
             if target.post and target.post != version.post:
                 continue
             if target.dev and target.dev != version.dev:
-                continue
-            if target.local and target.local != version.local:
                 continue
 
             matches.append(version)

@@ -7,6 +7,8 @@ from unittest import TestCase
 
 from .. import types
 
+from .helper import async_test
+
 FAKE_VERSION = types.Version("3.4")
 FAKE_BINARY = Path("/opt/fake/python3.4")
 
@@ -68,3 +70,12 @@ class TypesTest(TestCase):
                 context=ctx, step=step, exit_code=37, stdout="", stderr=""
             )
             self.assertEqual("3.4 foo> /bin/echo bar FAIL", str(event))
+
+    @async_test
+    async def test_step_await(self) -> None:
+        ctx = self.fake_context()
+        job = types.Job("foo", run=("echo hello",))
+        step = types.Step(("echo", "hello"), job, ctx)
+
+        with self.assertRaises(NotImplementedError):
+            await step
