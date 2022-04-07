@@ -4,7 +4,6 @@
 import asyncio
 import logging
 import signal
-from re import A
 from time import monotonic_ns
 from typing import AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
 
@@ -148,7 +147,7 @@ def run(
     return 0
 
 
-class ThxWatchdogHandler(FileSystemEventHandler):
+class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
     def __init__(
         self,
         config: Config,
@@ -169,8 +168,8 @@ class ThxWatchdogHandler(FileSystemEventHandler):
         LOG.debug("detected filesystem event %s", event)
         self.__last_event = monotonic_ns()
 
-    def signal(self, *args) -> None:
-        LOG.warning("ctrl-c %s", args)
+    def signal(self) -> None:
+        LOG.warning("ctrl-c")
         self.__running = False
 
     def render(self, event: Event) -> None:

@@ -4,7 +4,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, cast, Dict, List, Optional
 
 from rich.console import Group
 from rich.live import Live
@@ -13,7 +13,6 @@ from rich.tree import Tree
 
 from .types import (
     Context,
-    ContextEvent,
     Event,
     Fail,
     Job,
@@ -38,6 +37,7 @@ class RichRenderer:
 
     def __post_init__(self) -> None:
         self.view = Live(auto_refresh=False)
+        self.view.update(Group())
 
     def __enter__(self) -> "RichRenderer":
         self.view.__enter__()
@@ -59,7 +59,7 @@ class RichRenderer:
         latest = self.latest
 
         if isinstance(event, Fail):
-            group: Group = self.view.get_renderable()
+            group: Group = cast(Group, self.view.get_renderable())
             group.renderables.append(Tree("FAIL", style="red"))
             self.view.update(group, refresh=True)
             return
