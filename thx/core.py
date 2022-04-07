@@ -3,10 +3,9 @@
 
 import asyncio
 import logging
-import platform
 import signal
 from time import monotonic_ns
-from typing import AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
+from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
 
 from aioitertools.asyncio import as_generated
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -169,7 +168,7 @@ class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
         LOG.debug("detected filesystem event %s", event)
         self.__last_event = monotonic_ns()
 
-    def signal(self) -> None:
+    def signal(self, *args: Any) -> None:
         LOG.warning("ctrl-c")
         self.__running = False
 
@@ -243,10 +242,8 @@ def watch(
 
     try:
         observer.start()
-        loop = asyncio.get_event_loop()
-        if platform.system() != "Windows":
-            loop.add_signal_handler(signal.SIGINT, handler.signal)
-        exit_code = loop.run_until_complete(handler.runner())
+        signal.signal(signal.SIGINT, handler.signal)
+        exit_code = asyncio.run(handler.runner())
     finally:
         observer.stop()
         observer.join()
