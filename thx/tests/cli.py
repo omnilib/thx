@@ -2,13 +2,11 @@
 # Licensed under the MIT License
 
 from pathlib import Path
+from typing import Dict
 from unittest import TestCase
 from unittest.mock import ANY, call, MagicMock, patch
 
-from rich.console import Group
-
 from rich.text import Text
-from rich.tree import Tree
 
 from ..cli import RichRenderer
 
@@ -38,14 +36,14 @@ class CliTest(TestCase):
             render(Event())
             render(Fail())
 
-        render.view.__enter__.assert_called_once()
-        render.view.__exit__.assert_called_once()
+        live_mock.return_value.__enter__.assert_called_once()
+        live_mock.return_value.__exit__.assert_called_once()
 
     def test_render_reset(self, live_mock: MagicMock) -> None:
         render = RichRenderer()
         render(Reset())
 
-        render.view.update.assert_called_with(Text(""), refresh=True)
+        live_mock.return_value.update.assert_called_with(Text(""), refresh=True)
 
     def test_render_venv(self, live_mock: MagicMock) -> None:
         render = RichRenderer()
@@ -59,23 +57,24 @@ class CliTest(TestCase):
 
         for event in events:
             ctx = event.context
-            render.view.reset_mock()
+            live_mock.return_value.reset_mock()
             render(event)
 
             self.assertIn(ctx, render.venvs)
             self.assertEqual(event, render.venvs[ctx])
-            render.view.update.assert_called_once()
+            live_mock.return_value.update.assert_called_once()
 
     def test_render_job(self, live_mock: MagicMock) -> None:
         render = RichRenderer()
+        event: Event
 
         job = Job("foo", ("/bin/true", "/bin/false"))
         steps = [Step((cmd,), job, FAKE_39) for cmd in job.run]
 
-        expected = {job: {FAKE_39: {}}}
+        expected: Dict[Job, Dict[Context, Dict[Step, Event]]] = {job: {FAKE_39: {}}}
         for step, code in zip(steps, (0, 1)):
             with self.subTest(step.cmd):
-                render.view.reset_mock()
+                live_mock.return_value.reset_mock()
 
                 event = Start(step.context, step)
                 render(event)
@@ -87,7 +86,7 @@ class CliTest(TestCase):
                 expected[job][FAKE_39][step] = event
                 self.assertDictEqual(expected, render.latest)
 
-                render.view.update.assert_has_calls(
+                live_mock.return_value.update.assert_has_calls(
                     [
                         call(ANY, refresh=True),
                         call(ANY, refresh=True),
