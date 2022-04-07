@@ -25,7 +25,7 @@ TIMINGS: List["timed"] = []
 class timed:
     start: int = field(default=0, init=False)
     end: int = field(default=0, init=False)
-    duration: int = field(default=0, init=False)
+    duration: int = field(default=-1, init=False)
 
     message: str = field()
     context: Optional[Context] = field(default=None, compare=False)
@@ -41,7 +41,7 @@ class timed:
         if self.step:
             message += f" {self.step.cmd}"
         message += " -> "
-        if self.duration:
+        if self.duration >= 0:
             return f"{message:<40} {self.duration//1000000:>7} ms"
         elif self.start:
             return f"{message} (started)"
