@@ -1,6 +1,25 @@
 thx
 ===
 
+v0.4.0
+------
+
+Feature release
+
+- Feature: new `--watch` flag to trigger jobs on filesystem changes
+- Feature: new `Job.show_output` flag
+- Feature: config block `[tool.thx.values]`
+- Feature: new builtin "list" and "dump-config" commands
+- Fix: handle errors when building virtualenvs
+- Fix: handle Python versions with local patches (`3.8.6+`)
+- Fix: support for Windows cmd prompt
+
+```
+$ git shortlog -s v0.4.0a1...v0.4.0
+     9	John Reese
+```
+
+
 v0.4.0a1
 --------
 
