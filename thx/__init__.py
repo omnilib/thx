@@ -1,5 +1,5 @@
 """
-Simple, composable command runner for Python projects.
+Fast command runner for Python projects.
 """
 
 __author__ = "John Reese"

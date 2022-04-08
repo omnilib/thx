@@ -62,7 +62,7 @@ master_doc = "index"
 #
 html_theme = "alabaster"
 html_theme_options = {
-    "description": "Pythonic task runner",
+    "description": "fast command runner",
     "fixed_sidebar": True,
     "badge_branch": "main",
     "github_button": False,

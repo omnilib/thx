@@ -1,7 +1,7 @@
 thx
 ===
 
-A simple, composable command runner for Python projects.
+A fast command runner for Python projects.
 
 .. image:: https://img.shields.io/pypi/l/thx.svg
    :target: https://github.com/jreese/thx/blob/main/LICENSE
@@ -20,29 +20,31 @@ A simple, composable command runner for Python projects.
    :alt: Build Status
 
 
-Goals
+About
 -----
 
     "like makefiles, but in pyproject.toml"
 
     -- author
 
-`thx` is capable of running one or more jobs, configured via simple options in the
-PEP 517 standardized `pyproject.toml`. Jobs can be run on multiple Python versions at
-once, and individual steps can be executed in parallel for faster results.
+`thx` is capable of running multiple jobs, configured via simple options in the
+`PEP 518 <https://peps.python.org/pep-0518/>`_ standardized `pyproject.toml`.
+Jobs can be run on multiple Python versions at once, and independent steps can be
+executed in parallel for faster results:
 
 .. raw:: html
 
     <script id="asciicast-3zNkVeBxbQrwIDK5EbydnjDyV" src="https://asciinema.org/a/3zNkVeBxbQrwIDK5EbydnjDyV.js" async></script>
 
-.. literalinclude:: ../pyproject.toml
-    :language: toml
-    :start-after: [tool.thx]
+Usage
+-----
+
+Configuration uses standard `TOML <https://toml.io>`_ elements, and jobs can
+reference shared values, which will be interpolated at runtime:
 
 .. code-block:: toml
 
-    [tool.thx]
-    default = ["lint", "test"]
+    [tool.thx.values]
     module = "thx"
 
     [tool.thx.jobs]
@@ -52,8 +54,10 @@ once, and individual steps can be executed in parallel for faster results.
     ]
     test = "python -m unittest -v {module}.tests"
 
-With the given configuration, the following commands are possible. Note the automatic
-replacement of ``{module}`` with ``thx``:
+The configuration above defines two jobs, "lint" and "test"; the "lint" job defines
+two steps, and these can optionally be run in parallel. Both jobs present themselves
+as separate commands in `thx`. Note the automatic replacement of ``{module}`` with
+the configured value ``thx`` when running jobs:
 
 .. code-block:: shell-session
 
@@ -66,36 +70,51 @@ replacement of ``{module}`` with ``thx``:
     $ thx test
     > python -m unittest thx.tests
 
-Without a command, ``thx`` will run the configured list of default jobs:
+They can also be run together in order, similar to `makefiles`:
+
+.. code-block:: shell-session
+    
+    $ thx test lint
+    > python -m unittest thx.tests
+    > flake8 thx
+    > ufmt check thx
+
+By default, `thx` uses the active Python runtime for jobs, but can also run jobs on 
+multiple runtimes in parallel:
+
+.. code-block:: toml
+
+    [tool.thx]
+    python_versions = ["3.7", "3.8", "3.9"]
 
 .. code-block:: shell-session
 
-    $ thx
-    > flake8 thx
-    > ufmt check thx
-    > python -m unittest thx.tests
+    $ thx test
+    3.9> python -m unittest thx.tests
+    3.8> python -m unittest thx.tests
+    3.7> python -m unittest thx.tests
 
-
-Terminology
------------
-
-* `command` refers to an individual program executed by `thx` as a subprocess,
-  including any rendered template values. An example command could include running unit
-  tests via ``python -m unittest thx``.
-
-* `step` refers to a pending command, before any template values are rendered, and
-  includes the configuration, environment, and any other values that may affect the
-  final program and arguments that will be executed.
-
-* `job` refers to a named job, consisting of one or more steps, and a list of any other
-  jobs that must be completed before this job can begin (`"requires"`). These are the
-  primary unit defined in the project's ``pyproject.toml``.
+See the `user guide <https://thx.readthedocs.io>`_ for details on all available
+configuration options.
 
 
 Install
 -------
 
-`thx` is not yet ready for production use. Check the Github repo for development status.
+.. note::
+
+    `thx` is still in active development. Configuration options should be stable, but
+    compatibility between minor releases is not guaranteed. For important production
+    cases, please be sure to pin yourself to a single version, and test any new releases
+    thoroughly.
+
+`thx` is available on `PyPI <https://pypi.org/project/thx>`_:
+
+.. code-block:: shell-session
+
+    $ pip install thx
+
+See the `user guide <https://thx.readthedocs.io>`_ for help getting started.
 
 
 License
