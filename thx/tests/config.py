@@ -9,7 +9,7 @@ from textwrap import dedent
 from typing import Iterator, Optional
 from unittest import TestCase
 
-from ..config import ensure_dict, ensure_listish, load_config
+from ..config import ensure_dict, ensure_listish, load_config, reload_config
 from ..types import Config, ConfigError, Job
 
 
@@ -210,6 +210,52 @@ class ConfigTest(TestCase):
             self.assertDictEqual(expected.jobs, result.jobs)
             self.assertDictEqual(expected.values, result.values)
             self.assertEqual(expected, result)
+
+    def test_reload_config(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.thx]
+            jobs = {hello = "echo hello"}
+            """
+        ) as td:
+            expected = Config(
+                root=td,
+                jobs={"hello": Job(name="hello", run=("echo hello",))},
+            )
+            config = load_config(td)
+            self.assertEqual(expected, config)
+
+            (td / "pyproject.toml").write_text(
+                dedent(
+                    """
+                [tool.thx]
+                default = "hello"
+                module = "foobar"
+
+                [tool.thx.jobs]
+                hello = ["echo hello"]
+                lint = ["flake8 {module}", "black --check {module}"]
+                """
+                )
+            )
+
+            expected2 = Config(
+                root=td,
+                default=["hello"],
+                jobs={
+                    "hello": Job(name="hello", run=("echo hello",)),
+                    "lint": Job(
+                        name="lint",
+                        run=(
+                            "flake8 {module}",
+                            "black --check {module}",
+                        ),
+                    ),
+                },
+                values={"module": "foobar"},
+            )
+            config2 = reload_config(config)
+            self.assertEqual(expected2, config2)
 
     def test_job_defaults_once(self) -> None:
         with fake_pyproject(

@@ -170,3 +170,7 @@ def load_config(path: Optional[Path] = None) -> Config:
             watch_paths=watch_paths,
         )
     )
+
+
+def reload_config(config: Config) -> Config:
+    return load_config(config.root)
