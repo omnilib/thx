@@ -164,6 +164,9 @@ class ConfigTest(TestCase):
             module = "foobar"
             watch_paths = ["foobar", "pyproject.toml"]
 
+            [tool.thx.values]
+            something = "else"
+
             [tool.thx.jobs]
             format = ["black {module}"]
             lint = ["flake8 {module}", "black --check {module}"]
@@ -200,7 +203,7 @@ class ConfigTest(TestCase):
                         name="publish", run=("flit publish",), requires=("test", "lint")
                     ),
                 },
-                values={"module": "foobar"},
+                values={"module": "foobar", "something": "else"},
                 watch_paths=[Path("foobar"), Path("pyproject.toml")],
             )
             result = load_config(td)

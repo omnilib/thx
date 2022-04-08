@@ -157,12 +157,15 @@ def load_config(path: Optional[Path] = None) -> Config:
         )
     ]
 
+    values = ensure_dict(data.pop("values", {}), "tool.thx.values")
+    values.update(data)
+
     return validate_config(
         Config(
             root=root,
             default=default,
             jobs={cmd.name: cmd for cmd in jobs},
-            values=data,
+            values=values,
             versions=versions,
             requirements=requirements,
             watch_paths=watch_paths,
