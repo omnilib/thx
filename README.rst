@@ -30,11 +30,15 @@ About
 `thx` is capable of running multiple jobs, configured via simple options in the
 `PEP 518 <https://peps.python.org/pep-0518/>`_ standardized `pyproject.toml`.
 Jobs can be run on multiple Python versions at once, and independent steps can be
-executed in parallel for faster results:
+executed in parallel for faster results.
+
+Watch `thx` format the codebase, build sphinx docs, run the test and linter suites on
+five Python versions, and generate a final coverage report:
 
 .. raw:: html
 
-    <script id="asciicast-3zNkVeBxbQrwIDK5EbydnjDyV" src="https://asciinema.org/a/3zNkVeBxbQrwIDK5EbydnjDyV.js" async></script>
+    <script id="asciicast-ZoT8qYbQ2g8wl1FrR9JSpRqRZ" src="https://asciinema.org/a/ZoT8qYbQ2g8wl1FrR9JSpRqRZ.js" async></script>
+
 
 Usage
 -----
