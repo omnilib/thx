@@ -28,17 +28,17 @@ executed in parallel for faster results.
 Watch `thx` format the codebase, build sphinx docs, run the test and linter suites on
 five Python versions, and generate a final coverage report:
 
-.. raw:: html
-
-    <script id="asciicast-ZoT8qYbQ2g8wl1FrR9JSpRqRZ" src="https://asciinema.org/a/ZoT8qYbQ2g8wl1FrR9JSpRqRZ.js" async></script>
+.. image:: https://asciinema.org/a/ZoT8qYbQ2g8wl1FrR9JSpRqRZ.svg
+    :target: https://asciinema.org/a/ZoT8qYbQ2g8wl1FrR9JSpRqRZ
+    :alt: Demo of thx
 
 `thx` can also watch for modifications to your project, and automatically run jobs
 every time changes are detected—it will even reload its configuration when your
 ``pyproject.toml`` changes:
 
-.. raw:: html
-
-    <script id="asciicast-uE79pfl07YzTiDmGnNzgY1GWG" src="https://asciinema.org/a/uE79pfl07YzTiDmGnNzgY1GWG.js" async></script>
+.. image:: https://asciinema.org/a/uE79pfl07YzTiDmGnNzgY1GWG.svg
+    :target: https://asciinema.org/a/uE79pfl07YzTiDmGnNzgY1GWG
+    :alt: Demo of thx in watch mode
 
 
 Usage
