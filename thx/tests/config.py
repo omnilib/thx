@@ -204,7 +204,7 @@ class ConfigTest(TestCase):
                     ),
                 },
                 values={"module": "foobar", "something": "else"},
-                watch_paths=[Path("foobar"), Path("pyproject.toml")],
+                watch_paths={Path("foobar"), Path("pyproject.toml")},
             )
             result = load_config(td)
             self.assertDictEqual(expected.jobs, result.jobs)

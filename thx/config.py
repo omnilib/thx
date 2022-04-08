@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 
 import tomli
 from trailrunner.core import project_root
@@ -148,13 +148,13 @@ def load_config(path: Optional[Path] = None) -> Config:
     requirements: List[str] = ensure_listish(
         data.pop("requirements", None), "tool.thx.requirements"
     )
-    watch_paths: List[Path] = [
+    watch_paths: Set[Path] = {
         Path(p)
         for p in ensure_listish(
             data.pop("watch_paths", None),
             "tool.thx.watch_paths",
         )
-    ]
+    }
 
     values = ensure_dict(data.pop("values", {}), "tool.thx.values")
     values.update(data)

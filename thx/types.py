@@ -4,7 +4,17 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from shlex import quote
-from typing import Any, Callable, Generator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 from packaging.version import Version as PackagingVersion
 
@@ -64,7 +74,7 @@ class Config:
     values: Mapping[str, str] = field(default_factory=dict)
     versions: Sequence[Version] = field(default_factory=list)
     requirements: Sequence[str] = field(default_factory=list)
-    watch_paths: Sequence[Path] = field(default_factory=list)
+    watch_paths: Set[Path] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)

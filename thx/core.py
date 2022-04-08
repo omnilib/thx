@@ -4,6 +4,7 @@
 import asyncio
 import logging
 import signal
+from pathlib import Path
 from time import monotonic_ns
 from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
 
@@ -11,11 +12,14 @@ from aioitertools.asyncio import as_generated
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from thx.config import reload_config
+
 from .context import prepare_contexts, resolve_contexts
 
 from .runner import prepare_job
 from .types import (
     Config,
+    ConfigError,
     Context,
     Event,
     Fail,
@@ -156,23 +160,48 @@ def run(
 class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
     def __init__(
         self,
-        config: Config,
-        contexts: Sequence[Context],
-        jobs: Sequence[Job],
+        options: Options,
+        observer: Observer,
         render: Renderer,
     ):
-        self.__config = config
-        self.__contexts = contexts
-        self.__jobs = jobs
+        self.__options = options
+        self.__observer = observer
         self.__render = render
+
         self.__last_event = monotonic_ns()
+        self.__resolve = True
         self.__running = True
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         if "__pycache__" in event.src_path:
             return
-        LOG.debug("detected filesystem event %s", event)
+        source_path = Path(event.src_path).resolve()
+        LOG.debug("detected filesystem event %s", source_path)
+        if source_path == self.__options.config.root / "pyproject.toml":
+            self.reload()
         self.__last_event = monotonic_ns()
+
+    def reload(self) -> None:
+        old_config = self.__options.config
+        new_config = reload_config(old_config)
+        if new_config != old_config:
+            LOG.info("Config change detected")
+            self.__options.config = reload_config(self.__options.config)
+            self.__resolve = True
+            self.schedule()
+
+    def schedule(self) -> None:
+        config = self.__options.config
+        observer = self.__observer
+
+        if not config.watch_paths:
+            raise ConfigError("No configured paths to watch (tool.thx.watch_paths)")
+
+        observer.unschedule_all()
+
+        watch_paths = {config.root / "pyproject.toml"} | config.watch_paths
+        for path in watch_paths:
+            observer.schedule(self, config.root / path, recursive=True)
 
     def signal(self, *args: Any) -> None:
         LOG.warning("ctrl-c")
@@ -185,14 +214,32 @@ class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
     async def runner(self) -> int:
         exit_code = 0
         results: List[Result] = []
+        contexts: Sequence[Context]
+        jobs: Sequence[Job]
 
         while self.__running:
             start = monotonic_ns()
 
+            options = self.__options
+            config = options.config
+
+            if self.__resolve:
+                self.__resolve = False
+                contexts = resolve_contexts(config, options)
+                job_names = options.jobs
+                if not job_names:
+                    if config.default:
+                        job_names = list(config.default)
+                    else:
+                        LOG.warning("no jobs to run")
+                        return 1
+
+                jobs = resolve_jobs(job_names, config)
+
             exit_code = 0
             results.clear()
             self.render(Reset())
-            gen = run_jobs(self.__jobs, self.__contexts, self.__config)
+            gen = run_jobs(jobs, contexts, config)
             try:
                 while self.__running:
                     event = await gen.asend(None)
@@ -222,29 +269,9 @@ def watch(
 ) -> int:
     exit_code: int = 0
 
-    config = options.config
-    if not config.watch_paths:
-        LOG.error("No configured paths to watch (tool.thx.watch_paths)")
-        return 1
-
-    contexts = resolve_contexts(config, options)
-
-    job_names = options.jobs
-    if not job_names:
-        if config.default:
-            job_names.extend(config.default)
-        else:
-            LOG.warning("no jobs to run")
-            return 1
-
-    jobs = resolve_jobs(job_names, config)
-
-    handler = ThxWatchdogHandler(
-        config=config, contexts=contexts, jobs=jobs, render=render
-    )
     observer = Observer()
-    for path in config.watch_paths:
-        observer.schedule(handler, config.root / path, recursive=True)
+    handler = ThxWatchdogHandler(options, observer, render)
+    handler.schedule()
 
     try:
         observer.start()
