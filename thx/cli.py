@@ -21,6 +21,7 @@ from .types import (
     Result,
     Step,
     VenvCreate,
+    VenvError,
     VenvReady,
 )
 
@@ -64,7 +65,7 @@ class RichRenderer:
             self.view.update(group, refresh=True)
             return
 
-        if isinstance(event, (VenvCreate, VenvReady)):
+        if isinstance(event, (VenvCreate, VenvError, VenvReady)):
             venvs[event.context] = event
         elif isinstance(event, JobEvent):
             step = event.step
@@ -78,6 +79,12 @@ class RichRenderer:
             for context, event in venvs.items():
                 if isinstance(event, VenvReady):
                     text = Text(f"{context.python_version}> done", style="green")
+                elif isinstance(event, VenvError):
+                    print(event)
+                    text = Text(f"{context.python_version}> failed", style="red")
+                    text.append(f"\n{event.error.cmd}", style="")
+                    text.append("\n" + event.error.result.stdout, style="")
+                    text.append("\n" + event.error.result.stderr, style="")
                 else:
                     text = Text(f"{event}")
                 tree.add(text)

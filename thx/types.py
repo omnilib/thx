@@ -6,7 +6,7 @@ from pathlib import Path
 from shlex import quote
 from typing import Any, Callable, Generator, List, Mapping, Optional, Sequence, Union
 
-from packaging.version import Version
+from packaging.version import Version as PackagingVersion
 
 
 __all__ = [
@@ -23,8 +23,22 @@ Renderer = Callable[["Event"], None]
 StrPath = Union[str, Path]
 
 
+class Version(PackagingVersion):
+    def __init__(self, version: str) -> None:
+        version = version.rstrip("+")
+        super().__init__(version)
+
+
 class ConfigError(ValueError):
     """Invalid configuration value"""
+
+
+@dataclass
+class CommandError(RuntimeError):
+    """Command exited with error"""
+
+    cmd: Sequence[StrPath]
+    result: "CommandResult"
 
 
 @dataclass(unsafe_hash=True)
@@ -135,6 +149,15 @@ class VenvCreate(ContextEvent):
 
     def __str__(self) -> str:
         return f"{self.context.python_version}> {self.message}"
+
+
+@dataclass
+class VenvError(ContextEvent):
+    error: CommandError
+
+    def __str__(self) -> str:
+        cmd = " ".join(quote(str(arg)) for arg in self.error.cmd)
+        return f"{self.context.python_version}> {cmd} FAIL"
 
 
 @dataclass

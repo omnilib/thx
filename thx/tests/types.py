@@ -46,6 +46,12 @@ class TypesTest(TestCase):
         self.assertEqual(ctx, event.context)
         self.assertEqual("3.4> ready", str(event))
 
+    def test_event_venv_error(self) -> None:
+        ctx = self.fake_context()
+        err = types.CommandError(("foo", "bar"), types.CommandResult(1, "", ""))
+        event = types.VenvError(ctx, err)
+        self.assertEqual("3.4> foo bar FAIL", str(event))
+
     def test_event_job_start(self) -> None:
         ctx = self.fake_context()
         job = types.Job("foo", ("/bin/echo", "bar"))

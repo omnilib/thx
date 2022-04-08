@@ -26,6 +26,7 @@ from .types import (
     Result,
     Start,
     Step,
+    VenvError,
 )
 from .utils import timed
 
@@ -86,8 +87,13 @@ async def run_jobs(
         LOG.debug("all jobs have once=true, trimming contexts")
         contexts = contexts[0:1]
 
+    setup_error = False
     async for event in prepare_contexts(contexts, config):
+        if isinstance(event, VenvError):
+            setup_error = True
         yield event
+    if setup_error:
+        return
 
     generators: List[AsyncIterable[Event]] = []
 

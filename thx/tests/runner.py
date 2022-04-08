@@ -1,12 +1,13 @@
 # Copyright 2021 John Reese
 # Licensed under the MIT License
 
+import sys
 from pathlib import Path
-from unittest import TestCase
+from unittest import skipIf, TestCase
 from unittest.mock import call, Mock, patch
 
 from .. import runner
-from ..types import Config, Context, Job, Result, Version
+from ..types import CommandError, CommandResult, Config, Context, Job, Result, Version
 from .helper import async_test
 
 
@@ -70,6 +71,39 @@ class RunnerTest(TestCase):
         ]
         result = list(runner.prepare_job(job, context, config))
         self.assertListEqual(expected, result)
+
+    @skipIf(sys.version_info < (3, 8), "no asyncmock on 3.7")
+    @async_test
+    async def test_run_command(self) -> None:
+        from unittest.mock import AsyncMock
+
+        exec_mock = AsyncMock()
+        exec_mock.return_value.returncode = 0
+        exec_mock.return_value.communicate.return_value = b"nothing", b"error!"
+
+        with patch("thx.runner.asyncio.create_subprocess_exec", exec_mock):
+            result = await runner.run_command(("/fake/binary", "something"))
+            expected = CommandResult(0, "nothing", "error!")
+            self.assertEqual(expected, result)
+
+    @skipIf(sys.version_info < (3, 8), "no asyncmock on 3.7")
+    @async_test
+    async def test_check_command(self) -> None:
+        from unittest.mock import AsyncMock
+
+        exec_mock = AsyncMock()
+        exec_mock.return_value.returncode = 0
+        exec_mock.return_value.communicate.return_value = b"nothing", b"error!"
+
+        with patch("thx.runner.asyncio.create_subprocess_exec", exec_mock):
+            result = await runner.check_command(("/fake/binary", "something"))
+            expected = CommandResult(0, "nothing", "error!")
+            self.assertEqual(expected, result)
+
+            exec_mock.return_value.returncode = 1
+
+            with self.assertRaises(CommandError):
+                await runner.check_command(("/fake/binary", "whatever"))
 
     @async_test
     async def test_job_echo(self) -> None:

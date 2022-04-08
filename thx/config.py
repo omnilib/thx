@@ -5,10 +5,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
 import tomli
-from packaging.version import Version
 from trailrunner.core import project_root
 
-from .types import Config, ConfigError, Job
+from .types import Config, ConfigError, Job, Version
 
 
 def ensure_dict(value: Any, key: str) -> Dict[str, Any]:

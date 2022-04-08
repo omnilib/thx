@@ -11,17 +11,26 @@ from pathlib import Path
 from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
 from aioitertools.asyncio import as_generated
-from packaging.version import Version
 
-from thx.utils import version_match
+from .runner import check_command, which
 
-from .runner import run_command, which
+from .types import (
+    CommandError,
+    Config,
+    Context,
+    Event,
+    Options,
+    StrPath,
+    VenvCreate,
+    VenvError,
+    VenvReady,
+    Version,
+)
 
-from .types import Config, Context, Event, Options, StrPath, VenvCreate, VenvReady
-from .utils import timed
+from .utils import timed, version_match
 
 LOG = logging.getLogger(__name__)
-PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+\S+)")
+PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+[a-zA-Z0-9-_.]+)\+?")
 PYTHON_VERSIONS: Dict[Path, Optional[Version]] = {}
 TIMESTAMP = "thx.timestamp"
 
@@ -48,7 +57,7 @@ def runtime_version(binary: Path) -> Optional[Version]:
         match = PYTHON_VERSION_RE.search(proc.stdout)
         if not match:
             LOG.warning(
-                "running `%s -V` gave unexpected version string: %s",
+                "running `%s -V` gave unexpected version string: %r",
                 binary,
                 proc.stdout,
             )
@@ -98,7 +107,7 @@ def find_runtime(
 @timed("resolve contexts")
 def resolve_contexts(config: Config, options: Options) -> List[Context]:
     if options.live or not config.versions:
-        version = Version(platform.python_version())
+        version = Version(platform.python_version().rstrip("+"))
         # defer resolving python path to after venv creation
         return [Context(version, Path(""), venv_path(config, version), live=True)]
 
@@ -171,60 +180,63 @@ def needs_update(context: Context, config: Config) -> bool:
 async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[Event]:
     """Setup virtualenv and install packages"""
 
-    if needs_update(context, config):
-        LOG.info("preparing virtualenv %s", context.venv)
-        yield VenvCreate(context, message="creating virtualenv")
+    try:
+        if needs_update(context, config):
+            LOG.info("preparing virtualenv %s", context.venv)
+            yield VenvCreate(context, message="creating virtualenv")
 
-        # create virtualenv
-        prompt = f"thx-{context.python_version}"
-        if context.live:
-            import venv
+            # create virtualenv
+            prompt = f"thx-{context.python_version}"
+            if context.live:
+                import venv
 
-            venv.create(context.venv, clear=True, prompt=prompt, with_pip=True)
-            new_python_path, _ = find_runtime(context.python_version, context.venv)
-            assert new_python_path is not None
-            context.python_path = new_python_path
+                venv.create(context.venv, prompt=prompt, with_pip=True)
+                new_python_path, _ = find_runtime(context.python_version, context.venv)
+                assert new_python_path is not None
+                context.python_path = new_python_path
+
+            else:
+                await check_command(
+                    [
+                        context.python_path,
+                        "-m",
+                        "venv",
+                        "--prompt",
+                        prompt,
+                        context.venv,
+                    ]
+                )
+
+            # upgrade pip
+            yield VenvCreate(context, message="upgrading pip")
+            pip = which("pip", context)
+            await check_command([pip, "install", "-U", "pip", "setuptools"])
+
+            # install requirements.txt
+            yield VenvCreate(context, message="installing requirements")
+            requirements = project_requirements(config)
+            if requirements:
+                LOG.debug("installing deps from %s", requirements)
+                cmd: List[StrPath] = [pip, "install", "-U"]
+                for requirement in requirements:
+                    cmd.extend(["-r", requirement])
+                await check_command(cmd)
+
+            # install local project
+            yield VenvCreate(context, message="installing project")
+            await check_command([pip, "install", "-U", config.root])
+
+            # timestamp marker
+            content = f"{time.time_ns()}\n"
+            (context.venv / TIMESTAMP).write_text(content)
 
         else:
-            await run_command(
-                [
-                    context.python_path,
-                    "-m",
-                    "venv",
-                    "--clear",
-                    "--prompt",
-                    prompt,
-                    context.venv,
-                ]
-            )
+            LOG.debug("reusing existing virtualenv %s", context.venv)
 
-        # upgrade pip
-        yield VenvCreate(context, message="upgrading pip")
-        pip = which("pip", context)
-        await run_command([pip, "install", "-U", "pip"])
+        yield VenvReady(context)
 
-        # install requirements.txt
-        yield VenvCreate(context, message="installing requirements")
-        requirements = project_requirements(config)
-        if requirements:
-            LOG.debug("installing deps from %s", requirements)
-            cmd: List[StrPath] = [pip, "install", "-U"]
-            for requirement in requirements:
-                cmd.extend(["-r", requirement])
-            await run_command(cmd)
-
-        # install local project
-        yield VenvCreate(context, message="installing project")
-        await run_command([pip, "install", "-U", config.root])
-
-        # timestamp marker
-        content = f"{time.time_ns()}\n"
-        (context.venv / TIMESTAMP).write_text(content)
-
-    else:
-        LOG.debug("reusing existing virtualenv %s", context.venv)
-
-    yield VenvReady(context)
+    except CommandError as error:
+        yield VenvError(context, error)
 
 
 @timed("prepare contexts")

@@ -9,7 +9,16 @@ from asyncio.subprocess import PIPE
 from dataclasses import dataclass
 from typing import List, Sequence
 
-from .types import CommandResult, Config, Context, Job, Result, Step, StrPath
+from .types import (
+    CommandError,
+    CommandResult,
+    Config,
+    Context,
+    Job,
+    Result,
+    Step,
+    StrPath,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -42,6 +51,15 @@ async def run_command(command: Sequence[StrPath]) -> CommandResult:
     return CommandResult(
         proc.returncode, stdout.decode("utf-8"), stderr.decode("utf-8")
     )
+
+
+async def check_command(command: Sequence[StrPath]) -> CommandResult:
+    result = await run_command(command)
+
+    if result.error:
+        raise CommandError(command, result)
+
+    return result
 
 
 @dataclass(frozen=True)

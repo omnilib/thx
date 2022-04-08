@@ -104,7 +104,7 @@ class ContextTest(TestCase):
         result = context.runtime_version(binary)
         self.assertEqual(expected, result)
         log_mock.warning.assert_called_with(
-            "running `%s -V` gave unexpected version string: %s", binary, fake_output
+            "running `%s -V` gave unexpected version string: %r", binary, fake_output
         )
 
     @patch("thx.context.shutil.which")
@@ -355,16 +355,16 @@ class ContextTest(TestCase):
                 (venv / context.TIMESTAMP).write_text("0\n")
                 self.assertFalse(context.needs_update(ctx, config))
 
-    @patch("thx.context.run_command")
+    @patch("thx.context.check_command")
     @patch("thx.context.which")
     @async_test
     async def test_prepare_virtualenv_live(
         self, which_mock: Mock, run_mock: Mock
     ) -> None:
-        async def fake_run_command(cmd: Sequence[StrPath]) -> CommandResult:
+        async def fake_check_command(cmd: Sequence[StrPath]) -> CommandResult:
             return CommandResult(0, "", "")
 
-        run_mock.side_effect = fake_run_command
+        run_mock.side_effect = fake_check_command
         which_mock.side_effect = lambda b, ctx: f"{ctx.venv / 'bin'}/{b}"
 
         with TemporaryDirectory() as td:
@@ -385,7 +385,7 @@ class ContextTest(TestCase):
 
             run_mock.assert_has_calls(
                 [
-                    call([pip, "install", "-U", "pip"]),
+                    call([pip, "install", "-U", "pip", "setuptools"]),
                     call([pip, "install", "-U", "-r", reqs]),
                     call([pip, "install", "-U", config.root]),
                 ]

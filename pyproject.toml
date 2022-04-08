@@ -53,7 +53,7 @@ show_missing = true
 skip_covered = true
 
 [tool.mypy]
-python_version = "3.7"
+python_version = "3.8"
 strict = true
 ignore_missing_imports = true
 
@@ -61,8 +61,8 @@ ignore_missing_imports = true
 default = ["format", "docs", "test", "lint", "coverage"]
 module = "thx"
 srcs = "thx"
-python_versions = ["3.7", "3.8", "3.9", "3.10"]
-watch_paths = ["pyproject.toml", "requirements.txt", "requirements-dev.txt", "thx"]
+python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+watch_paths = ["docs", "thx"]
 
 [tool.thx.jobs]
 docs = {run="sphinx-build -b html docs html", once=true}
