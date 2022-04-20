@@ -62,7 +62,7 @@ master_doc = "index"
 #
 html_theme = "alabaster"
 html_theme_options = {
-    "description": "fast command runner",
+    "description": "rapid development assistant",
     "fixed_sidebar": True,
     "badge_branch": "main",
     "github_button": False,

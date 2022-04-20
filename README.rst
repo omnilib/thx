@@ -1,7 +1,7 @@
 thx
 ===
 
-A fast command runner for Python projects.
+Rapid development assistant, and fast command runner for Python projects.
 
 .. image:: https://img.shields.io/pypi/l/thx.svg
    :target: https://github.com/omnilib/thx/blob/main/LICENSE
