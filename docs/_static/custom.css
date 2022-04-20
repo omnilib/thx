@@ -15,6 +15,14 @@ div.omnilib-badges a {
 }
 
 div.omnilib-badges a:hover {
-    color: #777;
+    color: #97F;
     border: none;
+}
+
+div.sphinxsidebarwrapper h1.class {
+    font-family: ff-tisa-web-pro, Georgia, serif;
+}
+
+div.body h1 {
+    font-size: 300%;
 }
