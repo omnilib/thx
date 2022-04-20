@@ -19,10 +19,6 @@ div.omnilib-badges a:hover {
     border: none;
 }
 
-div.sphinxsidebarwrapper h1.class {
+div.sphinxsidebarwrapper h1.logo a {
     font-family: ff-tisa-web-pro, Georgia, serif;
-}
-
-div.body h1 {
-    font-size: 300%;
 }
