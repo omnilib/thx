@@ -4,19 +4,19 @@ thx
 A fast command runner for Python projects.
 
 .. image:: https://img.shields.io/pypi/l/thx.svg
-   :target: https://github.com/jreese/thx/blob/main/LICENSE
+   :target: https://github.com/omnilib/thx/blob/main/LICENSE
    :alt: MIT Licensed
 .. image:: https://img.shields.io/pypi/v/thx.svg
    :target: https://pypi.org/project/thx
    :alt: PyPI Release
 .. image:: https://img.shields.io/badge/change-log-blue
-   :target: https://github.com/jreese/thx/blob/main/CHANGELOG.md
+   :target: https://github.com/omnilib/thx/blob/main/CHANGELOG.md
    :alt: Changelog
 .. image:: https://readthedocs.org/projects/thx/badge/?version=stable
    :target: https://thx.readthedocs.io/
    :alt: Documentation Status
-.. image:: https://github.com/jreese/thx/workflows/Build/badge.svg
-   :target: https://github.com/jreese/thx/actions
+.. image:: https://github.com/omnilib/thx/workflows/Build/badge.svg
+   :target: https://github.com/omnilib/thx/actions
    :alt: Build Status
 
 
@@ -99,7 +99,7 @@ multiple runtimes in parallel:
     3.8> python -m unittest thx.tests
     3.7> python -m unittest thx.tests
 
-See the `user guide <https://thx.readthedocs.io>`_ for details on all available
+See the `user guide <https://thx.omnilib.dev>`_ for details on all available
 configuration options.
 
 
@@ -130,4 +130,4 @@ the MIT license. I am providing code in this repository to you under an open
 source license. This is my personal repository; the license you receive to my
 code is from me and not from my employer. See the `LICENSE`_ file for details.
 
-.. _LICENSE: https://github.com/jreese/thx/blob/main/LICENSE
+.. _LICENSE: https://github.com/omnilib/thx/blob/main/LICENSE

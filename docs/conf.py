@@ -66,12 +66,12 @@ html_theme_options = {
     "fixed_sidebar": True,
     "badge_branch": "main",
     "github_button": False,
-    "github_user": "jreese",
+    "github_user": "omnilib",
     "github_repo": "thx",
     "show_powered_by": False,
     "sidebar_collapse": False,
     "extra_nav_links": {
-        "Report Issues": "https://github.com/jreese/thx/issues",
+        "Report Issues": "https://github.com/omnilib/thx/issues",
     },
     "font_family": "lato, Helvetica, sans-serif",
     "code_font_family": (
@@ -89,7 +89,7 @@ html_sidebars = {
         "navigation.html",
         "relations.html",
         "searchbox.html",
-        # "omnilib.html",
+        "omnilib.html",
     ],
 }
 
