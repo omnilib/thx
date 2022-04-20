@@ -20,8 +20,8 @@ A fast command runner for Python projects.
    :alt: Build Status
 
 
-`thx` is capable of running arbitrary jobs, configured via simple options in the
-`PEP 518 <https://peps.python.org/pep-0518/>`_ standardized ``pyproject.toml``.
+`thx` ("thanks") is capable of running arbitrary jobs, configured via simple options
+in the `PEP 518 <https://peps.python.org/pep-0518/>`_ standardized ``pyproject.toml``.
 Jobs can be run on multiple Python versions at once, and independent steps can be
 executed in parallel for faster results.
 
