@@ -11,6 +11,7 @@
     :maxdepth: 2
 
     guide
+    config
     recipes
 
 .. toctree::
