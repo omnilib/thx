@@ -62,7 +62,7 @@ default = ["format", "docs", "test", "lint", "coverage"]
 module = "thx"
 srcs = "thx"
 python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
-watch_paths = ["README.rst", "docs", "thx"]
+# watch_paths = ["README.rst", "docs", "thx"]
 
 [tool.thx.jobs]
 docs = {run="sphinx-build -ab html docs html", once=true}

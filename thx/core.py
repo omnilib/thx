@@ -9,6 +9,7 @@ from time import monotonic_ns
 from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
 
 from aioitertools.asyncio import as_generated
+from trailrunner.core import gitignore, pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -19,7 +20,6 @@ from .context import prepare_contexts, resolve_contexts
 from .runner import prepare_job
 from .types import (
     Config,
-    ConfigError,
     Context,
     Event,
     Fail,
@@ -158,6 +158,15 @@ def run(
 
 
 class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
+    EXCLUDES = [
+        "__pycache__",
+        ".git",
+        ".hg",
+        ".mypy_cache",
+        ".coverage*",
+        "*.swp",
+    ]
+
     def __init__(
         self,
         options: Options,
@@ -168,16 +177,29 @@ class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
         self.__observer = observer
         self.__render = render
 
+        self.__root = options.config.root
         self.__last_event = monotonic_ns()
         self.__resolve = True
         self.__running = True
+        self.__excludes = gitignore(self.__root) + pathspec(self.EXCLUDES)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        if "__pycache__" in event.src_path:
-            return
         source_path = Path(event.src_path).resolve()
+
+        if source_path.is_dir():
+            return
+
+        try:
+            rel_path = source_path.relative_to(self.__root)
+        except ValueError:
+            LOG.warning("ignoring event for outside path %s", source_path)
+            return
+
+        if self.__excludes.match_file(rel_path):
+            return
+
         LOG.debug("detected filesystem event %s", source_path)
-        if source_path == self.__options.config.root / "pyproject.toml":
+        if source_path == self.__root / "pyproject.toml":
             self.reload()
         self.__last_event = monotonic_ns()
 
@@ -193,13 +215,13 @@ class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
     def schedule(self) -> None:
         config = self.__options.config
         observer = self.__observer
-
-        if not config.watch_paths:
-            raise ConfigError("No configured paths to watch (tool.thx.watch_paths)")
-
         observer.unschedule_all()
 
-        watch_paths = {config.root / "pyproject.toml"} | config.watch_paths
+        if not config.watch_paths:
+            watch_paths = {config.root}
+        else:
+            watch_paths = {config.root / "pyproject.toml"} | config.watch_paths
+
         for path in watch_paths:
             observer.schedule(self, config.root / path, recursive=True)
 
