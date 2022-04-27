@@ -59,10 +59,11 @@ ignore_missing_imports = true
 
 [tool.thx]
 default = ["format", "docs", "test", "lint", "coverage"]
+python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
+[tool.thx.values]
 module = "thx"
 srcs = "thx"
-python_versions = ["3.7", "3.8", "3.9", "3.10", "3.11"]
-# watch_paths = ["README.rst", "docs", "thx"]
 
 [tool.thx.jobs]
 docs = {run="sphinx-build -ab html docs html", once=true}
