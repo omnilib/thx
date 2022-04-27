@@ -87,3 +87,69 @@ minimum thresholds. In these cases, the coverage job can always show its output:
     [tool.thx.jobs.coverage]
     ...
     show_output = true
+
+
+Continuous Integration
+----------------------
+
+The current recommended way to use `thx` in CI jobs is by installing it from PyPI in
+the live environment:
+
+.. code-block:: shell-session
+
+    $ pip install thx
+
+`thx` should then be run with the ``--live`` flag to disable the version matrix, and
+only run jobs against the active runtime, rather than having a single CI job that
+tests all supported versions at once:
+
+.. code-block:: shell-session
+
+    $ thx --live <job-name> ...
+
+
+Github Actions
+^^^^^^^^^^^^^^
+
+This build workflow will run separate jobs for each supported OS and Python version,
+and will install and run `thx` using the active Python version.
+
+.. code-block:: yaml
+    :caption: .github/workflows/build.yml
+
+    name: Build
+    on:
+      push:
+        branches:
+          - main
+        tags:
+          - v*
+      pull_request:
+
+    jobs:
+      build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+          fail-fast: false
+          matrix:
+            python-version: ["3.7", "3.8", "3.9", "3.10"]
+            os: [macOS-latest, ubuntu-latest, windows-latest]
+
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v3
+
+          - name: Set Up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v3
+            with:
+              python-version: ${{ matrix.python-version }}
+              cache: 'pip'
+
+          - name: Install thx
+            run: pip install -U thx
+
+          - name: Test
+            run: thx --live test
+
+          - name: Lint
+            run: thx --live lint
