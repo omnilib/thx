@@ -119,7 +119,7 @@ Install
 
     $ pip install thx
 
-See the `user guide <https://thx.readthedocs.io>`_ for help getting started.
+See the `user guide <https://thx.omnilib.dev>`_ for help getting started.
 
 
 License
