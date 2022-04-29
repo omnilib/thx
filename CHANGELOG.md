@@ -1,6 +1,21 @@
 thx
 ===
 
+v0.5.0
+------
+
+Feature release
+
+- `watch_paths` is no longer required for watch mode
+- documentation improvements
+
+```
+$ git shortlog -s v0.4.0...v0.5.0
+    16	John Reese
+     4	dependabot[bot]
+```
+
+
 v0.4.0
 ------
 
