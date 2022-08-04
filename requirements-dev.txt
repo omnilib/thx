@@ -2,7 +2,7 @@ attribution==1.5.2
 black==22.6.0
 coverage==6.3.2
 flit==3.7.1
-flake8==4.0.1
+flake8==5.0.4
 mypy==0.971
 sphinx==4.5.0
 sphinx-mdinclude==0.5.1
