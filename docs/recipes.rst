@@ -28,7 +28,7 @@ your formatter only gets run on the latest enabled Python version:
 .. code-block:: toml
     :caption: pyproject.toml
 
-    [tool.thx.format]
+    [tool.thx.jobs.format]
     run = ["black {module}"]
     once = true
 
@@ -44,7 +44,7 @@ best use of multi-core systems:
 .. code-block:: toml
     :caption: pyproject.toml
 
-    [tool.thx.job.lint]
+    [tool.thx.jobs.lint]
     run = [
         "black --check {module}",
         "flake8 {module}",
