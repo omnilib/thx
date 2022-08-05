@@ -1,0 +1,16 @@
+name: "µfmt"
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check formatting
+        uses: jreese/ufmt@actions
+        with:
+          path: "thx"
+          requirements: requirements-dev.txt
+          python-version: "3.x"
