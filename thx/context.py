@@ -61,6 +61,10 @@ def runtime_version(binary: Path) -> Optional[Version]:
                 binary,
                 proc.stdout,
             )
+            if proc.stderr:
+                LOG.warning(
+                    "unexpected version string included stderr:\n%s", proc.stderr
+                )
             PYTHON_VERSIONS[binary] = None
             return None
 
