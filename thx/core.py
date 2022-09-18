@@ -6,7 +6,15 @@ import logging
 import signal
 from pathlib import Path
 from time import monotonic_ns
-from typing import Any, AsyncGenerator, AsyncIterable, AsyncIterator, List, Sequence
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    List,
+    Sequence,
+    Union,
+)
 
 from aioitertools.asyncio import as_generated
 from trailrunner.core import gitignore, pathspec
@@ -126,7 +134,7 @@ def run(
     options: Options,
     render: Renderer = print,
 ) -> int:
-    results: List[Result] = []
+    results: List[Union[Result, VenvError]] = []
 
     config = options.config
     contexts = resolve_contexts(config, options)
@@ -145,7 +153,7 @@ def run(
         async for event in run_jobs(jobs, contexts, config):
             render(event)
 
-            if isinstance(event, Result):
+            if isinstance(event, (Result, VenvError)):
                 results.append(event)
 
     asyncio.run(runner())
