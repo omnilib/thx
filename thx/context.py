@@ -213,8 +213,10 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
 
             # upgrade pip
             yield VenvCreate(context, message="upgrading pip")
+            await check_command(
+                [context.python_path, "-m", "pip", "install", "-U", "pip", "setuptools"]
+            )
             pip = which("pip", context)
-            await check_command([pip, "install", "-U", "pip", "setuptools"])
 
             # install requirements.txt
             yield VenvCreate(context, message="installing requirements")

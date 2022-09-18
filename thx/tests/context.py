@@ -385,7 +385,17 @@ class ContextTest(TestCase):
 
             run_mock.assert_has_calls(
                 [
-                    call([pip, "install", "-U", "pip", "setuptools"]),
+                    call(
+                        [
+                            ctx.python_path,
+                            "-m",
+                            "pip",
+                            "install",
+                            "-U",
+                            "pip",
+                            "setuptools",
+                        ]
+                    ),
                     call([pip, "install", "-U", "-r", reqs]),
                     call([pip, "install", "-U", config.root]),
                 ]

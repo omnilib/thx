@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import platform
 import shlex
 import shutil
 from asyncio.subprocess import PIPE
@@ -24,7 +25,10 @@ LOG = logging.getLogger(__name__)
 
 
 def which(name: str, context: Context) -> str:
-    bin_path = (context.venv / "bin").as_posix()
+    if platform.system() == "Windows":
+        bin_path = (context.venv / "Scripts").as_posix()
+    else:
+        bin_path = (context.venv / "bin").as_posix()
     binary = shutil.which(name, path=bin_path)
     if binary is None:
         binary = shutil.which(name)

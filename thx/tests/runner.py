@@ -1,6 +1,7 @@
 # Copyright 2022 Amethyst Reese
 # Licensed under the MIT License
 
+import platform
 import sys
 from pathlib import Path
 from unittest import skipIf, TestCase
@@ -15,17 +16,20 @@ class RunnerTest(TestCase):
     @patch("thx.runner.shutil.which")
     def test_which(self, which_mock: Mock) -> None:
         context = Context(Version("3.10"), Path(), Path("/fake/venv"))
+        fake_venv_bin = (
+            "/fake/venv/Scripts" if platform.system() == "Windows" else "/fake/venv/bin"
+        )
         with self.subTest("found"):
             which_mock.side_effect = lambda b, path: f"/usr/bin/{b}"
             self.assertEqual("/usr/bin/frobfrob", runner.which("frobfrob", context))
-            which_mock.assert_has_calls([call("frobfrob", path="/fake/venv/bin")])
+            which_mock.assert_has_calls([call("frobfrob", path=fake_venv_bin)])
 
         with self.subTest("not in venv"):
             which_mock.side_effect = [None, "/usr/bin/scoop"]
             self.assertEqual("/usr/bin/scoop", runner.which("scoop", context))
             which_mock.assert_has_calls(
                 [
-                    call("scoop", path="/fake/venv/bin"),
+                    call("scoop", path=fake_venv_bin),
                     call("scoop"),
                 ]
             )
@@ -36,7 +40,7 @@ class RunnerTest(TestCase):
             self.assertEqual("frobfrob", runner.which("frobfrob", context))
             which_mock.assert_has_calls(
                 [
-                    call("frobfrob", path="/fake/venv/bin"),
+                    call("frobfrob", path=fake_venv_bin),
                     call("frobfrob"),
                 ]
             )
