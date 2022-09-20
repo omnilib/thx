@@ -37,6 +37,7 @@ thx = "thx.main:main"
 [tool.attribution]
 name = "thx"
 package = "thx"
+ignored_authors = ["dependabot"]
 version_file = true
 signed_tags = false
 
