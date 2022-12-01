@@ -3,7 +3,7 @@ black==22.8.0
 coverage==6.4.4
 flit==3.7.1
 flake8==5.0.4
-mypy==0.971
+mypy==0.991
 sphinx==5.1.1; python_version >= "3.8"
 sphinx-mdinclude==0.5.1
 ufmt==2.0.1
