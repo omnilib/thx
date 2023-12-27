@@ -17,7 +17,7 @@ Bugfix release
 ```text
 $ git shortlog -s v0.5.0...v0.5.1
     10	Amethyst Reese
-     2	John Reese
+     2	Amethyst Reese
      1	Tim Hatch
     12	dependabot[bot]
 ```
@@ -33,7 +33,7 @@ Feature release
 
 ```text
 $ git shortlog -s v0.4.0...v0.5.0
-    16	John Reese
+    16	Amethyst Reese
      4	dependabot[bot]
 ```
 
@@ -53,7 +53,7 @@ Feature release
 
 ```text
 $ git shortlog -s v0.4.0a1...v0.4.0
-     9	John Reese
+     9	Amethyst Reese
 ```
 
 
@@ -69,7 +69,7 @@ Alpha release
 
 ```text
 $ git shortlog -s v0.3.0...v0.4.0a1
-    25	John Reese
+    25	Amethyst Reese
     11	dependabot[bot]
 ```
 
@@ -86,7 +86,7 @@ Feature release
 
 ```text
 $ git shortlog -s v0.2.0...v0.3.0
-     8	John Reese
+     8	Amethyst Reese
 ```
 
 
@@ -107,7 +107,7 @@ See `pyproject.toml` for example job specs.
 
 ```text
 $ git shortlog -s v0.1.0...v0.2.0
-    16	John Reese
+    16	Amethyst Reese
     10	dependabot[bot]
 ```
 
@@ -121,7 +121,7 @@ Initial release
 
 ```text
 $ git shortlog -s v0.1.0
-    37	John Reese
+    37	Amethyst Reese
      2	dependabot[bot]
 ```
 
