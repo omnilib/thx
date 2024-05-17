@@ -3,21 +3,18 @@ thx
 
 Rapid development assistant, and fast command runner for Python projects.
 
-.. image:: https://img.shields.io/pypi/l/thx.svg
-   :target: https://github.com/omnilib/thx/blob/main/LICENSE
-   :alt: MIT Licensed
 .. image:: https://img.shields.io/pypi/v/thx.svg
    :target: https://pypi.org/project/thx
    :alt: PyPI Release
-.. image:: https://img.shields.io/badge/change-log-blue
-   :target: https://github.com/omnilib/thx/blob/main/CHANGELOG.md
-   :alt: Changelog
 .. image:: https://readthedocs.org/projects/thx/badge/?version=stable
    :target: https://thx.readthedocs.io/
    :alt: Documentation Status
-.. image:: https://github.com/omnilib/thx/workflows/Build/badge.svg
-   :target: https://github.com/omnilib/thx/actions
-   :alt: Build Status
+.. image:: https://img.shields.io/badge/change-log-blue
+   :target: https://github.com/omnilib/thx/blob/main/CHANGELOG.md
+   :alt: Changelog
+.. image:: https://img.shields.io/pypi/l/thx.svg
+   :target: https://github.com/omnilib/thx/blob/main/LICENSE
+   :alt: MIT Licensed
 
 
 `thx` ("thanks") is capable of running arbitrary jobs, configured via simple options
