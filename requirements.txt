@@ -1,4 +1,4 @@
-aioitertools==v0.10.0b1
+aioitertools==v0.11.0
 click==8.1.3
 packaging==24.0
 rich==12.5.1
