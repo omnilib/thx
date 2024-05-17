@@ -162,6 +162,8 @@ class ConfigTest(TestCase):
             [tool.thx]
             default = ["test", "lint"]
             module = "foobar"
+            requirements = "requirements/dev.txt"
+            extras = "docs"
             watch_paths = ["foobar", "pyproject.toml"]
 
             [tool.thx.values]
@@ -204,6 +206,8 @@ class ConfigTest(TestCase):
                     ),
                 },
                 values={"module": "foobar", "something": "else"},
+                requirements=["requirements/dev.txt"],
+                extras=["docs"],
                 watch_paths={Path("foobar"), Path("pyproject.toml")},
             )
             result = load_config(td)

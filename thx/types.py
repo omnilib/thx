@@ -74,6 +74,7 @@ class Config:
     values: Mapping[str, str] = field(default_factory=dict)
     versions: Sequence[Version] = field(default_factory=list)
     requirements: Sequence[str] = field(default_factory=list)
+    extras: Sequence[str] = field(default_factory=list)
     watch_paths: Set[Path] = field(default_factory=set)
 
     def __post_init__(self) -> None:

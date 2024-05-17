@@ -148,6 +148,7 @@ def load_config(path: Optional[Path] = None) -> Config:
     requirements: List[str] = ensure_listish(
         data.pop("requirements", None), "tool.thx.requirements"
     )
+    extras: List[str] = ensure_listish(data.pop("extras", None), "tool.thx.extras")
     watch_paths: Set[Path] = {
         Path(p)
         for p in ensure_listish(
@@ -167,6 +168,7 @@ def load_config(path: Optional[Path] = None) -> Config:
             values=values,
             versions=versions,
             requirements=requirements,
+            extras=extras,
             watch_paths=watch_paths,
         )
     )

@@ -1,6 +1,7 @@
 # Copyright 2022 Amethyst Reese
 # Licensed under the MIT License
 
+import asyncio
 import platform
 import subprocess
 from pathlib import Path
@@ -116,8 +117,8 @@ class ContextTest(TestCase):
             tdp = Path(td).resolve()
             config = Config(root=tdp)
 
-            which_mock.side_effect = (
-                lambda b: f"/fake/bin/{b}" if "." not in b else None
+            which_mock.side_effect = lambda b: (
+                f"/fake/bin/{b}" if "." not in b else None
             )
 
             for version in TEST_VERSIONS:
@@ -340,6 +341,8 @@ class ContextTest(TestCase):
         with TemporaryDirectory() as td:
             tdp = Path(td).resolve()
 
+            pyproj = tdp / "pyproject.toml"
+            pyproj.write_text("\n")
             reqs = tdp / "requirements.txt"
             reqs.write_text("\n")
 
@@ -354,6 +357,62 @@ class ContextTest(TestCase):
                 venv.mkdir(parents=True)
                 (venv / context.TIMESTAMP).write_text("0\n")
                 self.assertFalse(context.needs_update(ctx, config))
+
+            with self.subTest("touch pyproject.toml"):
+                await asyncio.sleep(0.01)
+                pyproj.write_text("\n\n")
+                self.assertTrue(context.needs_update(ctx, config))
+
+    @patch("thx.context.check_command")
+    @patch("thx.context.which")
+    @async_test
+    async def test_prepare_virtualenv_extras(
+        self, which_mock: Mock, run_mock: Mock
+    ) -> None:
+        self.maxDiff = None
+
+        async def fake_check_command(cmd: Sequence[StrPath]) -> CommandResult:
+            return CommandResult(0, "", "")
+
+        run_mock.side_effect = fake_check_command
+        which_mock.side_effect = lambda b, ctx: f"{ctx.venv / 'bin'}/{b}"
+
+        with TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+            venv = tdp / ".thx" / "venv" / "3.9"
+            venv.mkdir(parents=True)
+
+            config = Config(root=tdp, extras=["more"])
+            ctx = Context(Version("3.9"), venv / "bin" / "python", venv)
+            pip = which_mock("pip", ctx)
+            reqs = context.project_requirements(config)
+            self.assertEqual([], reqs)
+
+            events = [event async for event in context.prepare_virtualenv(ctx, config)]
+            expected = [
+                VenvCreate(ctx, "creating virtualenv"),
+                VenvCreate(ctx, "upgrading pip"),
+                VenvCreate(ctx, "installing project"),
+                VenvReady(ctx),
+            ]
+            self.assertEqual(expected, events)
+
+            run_mock.assert_has_calls(
+                [
+                    call(
+                        [
+                            ctx.python_path,
+                            "-m",
+                            "pip",
+                            "install",
+                            "-U",
+                            "pip",
+                            "setuptools",
+                        ]
+                    ),
+                    call([pip, "install", "-U", str(config.root) + "[more]"]),
+                ],
+            )
 
     @patch("thx.context.check_command")
     @patch("thx.context.which")
@@ -397,7 +456,7 @@ class ContextTest(TestCase):
                         ]
                     ),
                     call([pip, "install", "-U", "-r", reqs]),
-                    call([pip, "install", "-U", config.root]),
+                    call([pip, "install", "-U", str(config.root)]),
                 ]
             )
 
