@@ -1,19 +1,16 @@
 SRCS:=thx
+EXTRAS:=dev,docs
 
 .venv:
 	python -m venv .venv
-	source .venv/bin/activate && make setup dev
+	source .venv/bin/activate && make install
 	echo 'run `source .venv/bin/activate` to use virtualenv'
 
 venv: .venv
 
-dev:
-	python -m pip install -e .
-
-setup:
+install:
 	python -m pip install -U pip
-	python -m pip install -Ur requirements-dev.txt
-	python -m pip install -Ur requirements.txt
+	python -m pip install -e .[$(EXTRAS)]
 
 release: lint test clean
 	flit publish
