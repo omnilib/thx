@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import time
+from itertools import chain
 from pathlib import Path
 from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
@@ -160,10 +161,12 @@ def needs_update(context: Context, config: Config) -> bool:
         if timestamp.exists():
             base = timestamp.stat().st_mtime_ns
             newest = 0
-            reqs = project_requirements(config)
-            for req in reqs:
-                if req.exists():
-                    mod_time = req.stat().st_mtime_ns
+            for path in chain(
+                [config.root / "pyproject.toml"],
+                project_requirements(config),
+            ):
+                if path.exists():
+                    mod_time = path.stat().st_mtime_ns
                     newest = max(newest, mod_time)
             return newest > base
 
@@ -219,9 +222,9 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             pip = which("pip", context)
 
             # install requirements.txt
-            yield VenvCreate(context, message="installing requirements")
             requirements = project_requirements(config)
             if requirements:
+                yield VenvCreate(context, message="installing requirements")
                 LOG.debug("installing deps from %s", requirements)
                 cmd: List[StrPath] = [pip, "install", "-U"]
                 for requirement in requirements:
@@ -230,7 +233,11 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
 
             # install local project
             yield VenvCreate(context, message="installing project")
-            await check_command([pip, "install", "-U", config.root])
+            if config.extras:
+                proj = f"{config.root}[{','.join(config.extras)}]"
+            else:
+                proj = str(config.root)
+            await check_command([pip, "install", "-U", proj])
 
             # timestamp marker
             content = f"{time.time_ns()}\n"
