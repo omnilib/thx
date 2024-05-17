@@ -7,4 +7,4 @@ mypy==1.10.0
 sphinx==7.3.7; python_version >= "3.9"
 sphinx-mdinclude==0.6.1
 ufmt==2.6.0
-usort==1.0.5
+usort==1.0.8.post1
