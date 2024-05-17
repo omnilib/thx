@@ -73,6 +73,12 @@ The following project-level options are supported in the ``[tool.thx]`` table:
     of jobs that will be run. If not set and no jobs are requested, `thx` will output a
     list of known jobs, equivalent to running ``thx list``.
 
+.. attribute:: extras
+    :type: list[str]
+
+    This specifies a list of package "extras" or optional dpendendencies to be
+    installed when initializing virtual environments and installing the project.
+
 .. attribute:: python_versions
     :type: list[str]
 
