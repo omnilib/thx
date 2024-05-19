@@ -6,7 +6,7 @@ import logging
 import shutil
 import sys
 from functools import partial
-from typing import Any, cast, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 import click
 from rich.logging import RichHandler
@@ -51,8 +51,8 @@ class ThxGroup(click.Group):
             job = self.config.jobs[name]
             exe = "; ".join(r for r in job.run)
             desc = f"Run `{exe}`"
-            cb = partial(queue_job, name)
-            cb = click.pass_context(cb)
+            cbp = partial(queue_job, name)
+            cb = click.pass_context(cbp)
             return click.Command(name, callback=cb, help=desc)
         return None
 
@@ -87,13 +87,11 @@ def main(
     """
     Setup options and load config
     """
-    group = cast(ThxGroup, main)
-
     if live and python:
         raise click.UsageError("Cannot specify both --live and --python")
 
     ctx.ensure_object(Options)
-    ctx.obj.config = group.config
+    ctx.obj.config = main.config
     ctx.obj.benchmark = benchmark
     ctx.obj.debug = debug
     ctx.obj.clean = clean
@@ -119,7 +117,9 @@ def main(
 
 @main.result_callback()
 @click.pass_context
-def process_request(ctx: click.Context, results: Sequence[Any], **kwargs: Any) -> None:
+def process_request(
+    ctx: click.Context, /, results: Sequence[Any], **kwargs: Any
+) -> None:
     """
     All click commands finished, start any jobs necessary
     """
