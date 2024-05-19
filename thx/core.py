@@ -20,6 +20,7 @@ from aioitertools.asyncio import as_generated
 from trailrunner.core import gitignore, pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
+from watchdog.observers.api import BaseObserver
 
 from thx.config import reload_config
 
@@ -165,7 +166,7 @@ def run(
     return 0
 
 
-class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
+class ThxWatchdogHandler(FileSystemEventHandler):
     EXCLUDES = [
         "__pycache__",
         ".git",
@@ -178,7 +179,7 @@ class ThxWatchdogHandler(FileSystemEventHandler):  # type: ignore
     def __init__(
         self,
         options: Options,
-        observer: Observer,
+        observer: BaseObserver,
         render: Renderer,
     ):
         self.__options = options

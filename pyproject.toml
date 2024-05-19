@@ -89,6 +89,10 @@ python_version = "3.8"
 strict = true
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "thx.core"
+disallow_untyped_calls = false
+
 [tool.thx]
 default = ["format", "docs", "test", "lint", "coverage"]
 python_versions = ["3.8", "3.9", "3.10", "3.11", "3.12"]
