@@ -37,7 +37,7 @@ dev = [
     "tomli==2.0.1",
     "trailrunner==1.4.0",
     "typing_extensions == 4.1.1",
-    "watchdog==2.1.9",
+    "watchdog==4.0.0",
 
     "attribution==1.7.1",
     "black==24.4.2",
@@ -88,6 +88,10 @@ skip_covered = true
 python_version = "3.8"
 strict = true
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "thx.core"
+disallow_untyped_calls = false
 
 [tool.thx]
 default = ["format", "docs", "test", "lint", "coverage"]
