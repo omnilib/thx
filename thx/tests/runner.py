@@ -3,9 +3,10 @@
 
 import platform
 import sys
+from asyncio.subprocess import PIPE
 from pathlib import Path
 from unittest import skipIf, TestCase
-from unittest.mock import call, Mock, patch
+from unittest.mock import ANY, call, Mock, patch
 
 from .. import runner
 from ..types import CommandError, CommandResult, Config, Context, Job, Result, Version
@@ -89,6 +90,18 @@ class RunnerTest(TestCase):
             result = await runner.run_command(("/fake/binary", "something"))
             expected = CommandResult(0, "nothing", "error!")
             self.assertEqual(expected, result)
+
+            ctx = Context(Version("3.8"), Path("/fake/python"), Path("/fake"))
+            result = await runner.run_command(("/fake/binary", "something"), ctx)
+            expected = CommandResult(0, "nothing", "error!")
+            self.assertEqual(expected, result)
+            exec_mock.assert_called_with(
+                "/fake/binary", "something", stdout=PIPE, stderr=PIPE, env=ANY
+            )
+            self.assertIn(
+                str(runner.venv_bin_path(ctx)),
+                exec_mock.call_args.kwargs["env"]["PATH"],
+            )
 
     @skipIf(sys.version_info < (3, 8), "no asyncmock on 3.7")
     @async_test
