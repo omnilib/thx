@@ -80,12 +80,10 @@ def find_runtime(
 ) -> Tuple[Optional[Path], Optional[Version]]:
     if venv and venv.is_dir():
         bin_dir = venv_bin_path(venv)
-        LOG.debug("looking for runtime in venv %s", bin_dir)
         binary_path_str = shutil.which("python", path=bin_dir.as_posix())
         if binary_path_str:
             binary_path = Path(binary_path_str)
             binary_version = runtime_version(binary_path)
-            LOG.debug("found venv runtime %s", binary_path)
             return binary_path, binary_version
 
     # TODO: better way to find specific micro/pre/post versions?
