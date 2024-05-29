@@ -13,8 +13,7 @@ from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
 from aioitertools.asyncio import as_generated
 
-from .runner import check_command, which
-
+from .runner import check_command
 from .types import (
     CommandError,
     Config,
@@ -27,8 +26,7 @@ from .types import (
     VenvReady,
     Version,
 )
-
-from .utils import timed, version_match
+from .utils import timed, venv_bin_path, version_match, which
 
 LOG = logging.getLogger(__name__)
 PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+[a-zA-Z0-9-_.]+)\+?")
@@ -81,11 +79,13 @@ def find_runtime(
     version: Version, venv: Optional[Path] = None
 ) -> Tuple[Optional[Path], Optional[Version]]:
     if venv and venv.is_dir():
-        bin_dir = venv / "bin"
+        bin_dir = venv_bin_path(venv)
         if bin_dir.is_dir():
             binary_path_str = shutil.which("python", path=f"{bin_dir.as_posix()}")
             if binary_path_str:
-                return Path(binary_path_str), None
+                binary_path = Path(binary_path_str)
+                binary_version = runtime_version(binary_path)
+                return binary_path, binary_version
 
     # TODO: better way to find specific micro/pre/post versions?
     binary_names = [

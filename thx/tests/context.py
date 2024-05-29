@@ -242,7 +242,6 @@ class ContextTest(TestCase):
                             ),
                         ]
                     )
-                    runtime_mock.assert_not_called()
 
     @patch("thx.context.find_runtime")
     def test_resolve_contexts_no_config(self, runtime_mock: Mock) -> None:
