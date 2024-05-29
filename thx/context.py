@@ -215,10 +215,8 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             new_python_path, new_python_version = find_runtime(
                 context.python_version, context.venv
             )
-            assert new_python_path is not None
-            assert new_python_version is not None
-            context.python_path = new_python_path
-            context.python_version = new_python_version
+            context.python_path = new_python_path or context.python_path
+            context.python_version = new_python_version or context.python_version
 
             # upgrade pip
             yield VenvCreate(context, message="upgrading pip")
