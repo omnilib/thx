@@ -2,10 +2,13 @@
 # Licensed under the MIT License
 
 import logging
+import platform
+import shutil
 from asyncio import iscoroutinefunction
 from dataclasses import dataclass, field, replace
 from functools import wraps
 from itertools import zip_longest
+from pathlib import Path
 from time import monotonic_ns
 from typing import Any, Callable, List, Optional, TypeVar
 
@@ -107,6 +110,24 @@ def get_timings() -> List[timed]:
     result = list(sorted(TIMINGS))
     TIMINGS.clear()
     return result
+
+
+def venv_bin_path(venv: Path) -> Path:
+    if platform.system() == "Windows":
+        bin_path = venv / "Scripts"
+    else:
+        bin_path = venv / "bin"
+    return bin_path
+
+
+def which(name: str, context: Context) -> str:
+    bin_path = venv_bin_path(context.venv).as_posix()
+    binary = shutil.which(name, path=bin_path)
+    if binary is None:
+        binary = shutil.which(name)
+        if binary is None:
+            return name
+    return binary
 
 
 def version_match(versions: List[Version], target: Version) -> List[Version]:

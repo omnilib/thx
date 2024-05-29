@@ -60,8 +60,8 @@ class CliTest(TestCase):
             live_mock.return_value.reset_mock()
             render(event)
 
-            self.assertIn(ctx, render.venvs)
-            self.assertEqual(event, render.venvs[ctx])
+            self.assertIn(ctx.venv, render.venvs)
+            self.assertEqual(event, render.venvs[ctx.venv])
             live_mock.return_value.update.assert_called_once()
 
     def test_render_job(self, live_mock: MagicMock) -> None:

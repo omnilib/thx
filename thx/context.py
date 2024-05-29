@@ -13,8 +13,7 @@ from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
 from aioitertools.asyncio import as_generated
 
-from .runner import check_command, which
-
+from .runner import check_command
 from .types import (
     CommandError,
     Config,
@@ -27,8 +26,7 @@ from .types import (
     VenvReady,
     Version,
 )
-
-from .utils import timed, version_match
+from .utils import timed, venv_bin_path, version_match, which
 
 LOG = logging.getLogger(__name__)
 PYTHON_VERSION_RE = re.compile(r"Python (\d+\.\d+[a-zA-Z0-9-_.]+)\+?")
@@ -81,11 +79,12 @@ def find_runtime(
     version: Version, venv: Optional[Path] = None
 ) -> Tuple[Optional[Path], Optional[Version]]:
     if venv and venv.is_dir():
-        bin_dir = venv / "bin"
-        if bin_dir.is_dir():
-            binary_path_str = shutil.which("python", path=f"{bin_dir.as_posix()}")
-            if binary_path_str:
-                return Path(binary_path_str), None
+        bin_dir = venv_bin_path(venv)
+        binary_path_str = shutil.which("python", path=bin_dir.as_posix())
+        if binary_path_str:
+            binary_path = Path(binary_path_str)
+            binary_version = runtime_version(binary_path)
+            return binary_path, binary_version
 
     # TODO: better way to find specific micro/pre/post versions?
     binary_names = [
@@ -198,9 +197,6 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
                 import venv
 
                 venv.create(context.venv, prompt=prompt, with_pip=True)
-                new_python_path, _ = find_runtime(context.python_version, context.venv)
-                assert new_python_path is not None
-                context.python_path = new_python_path
 
             else:
                 await check_command(
@@ -213,6 +209,12 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
                         context.venv,
                     ]
                 )
+
+            new_python_path, new_python_version = find_runtime(
+                context.python_version, context.venv
+            )
+            context.python_path = new_python_path or context.python_path
+            context.python_version = new_python_version or context.python_version
 
             # upgrade pip
             yield VenvCreate(context, message="upgrading pip")

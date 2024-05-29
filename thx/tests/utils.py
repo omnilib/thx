@@ -2,10 +2,12 @@
 # Licensed under the MIT License
 
 import asyncio
+import platform
 import time
 from pathlib import Path
 from typing import Any, List, Tuple
 from unittest import TestCase
+from unittest.mock import call, Mock, patch
 
 from .. import utils
 from ..types import Context, Job, Step, Version
@@ -77,6 +79,38 @@ class UtilTest(TestCase):
         timing = timings[0]
         self.assertEqual("test message", timing.message)
         self.assertEqual(job, timing.job)
+
+    @patch("thx.utils.shutil.which")
+    def test_which(self, which_mock: Mock) -> None:
+        context = Context(Version("3.10"), Path(), Path("/fake/venv"))
+        fake_venv_bin = (
+            "/fake/venv/Scripts" if platform.system() == "Windows" else "/fake/venv/bin"
+        )
+        with self.subTest("found"):
+            which_mock.side_effect = lambda b, path: f"/usr/bin/{b}"
+            self.assertEqual("/usr/bin/frobfrob", utils.which("frobfrob", context))
+            which_mock.assert_has_calls([call("frobfrob", path=fake_venv_bin)])
+
+        with self.subTest("not in venv"):
+            which_mock.side_effect = [None, "/usr/bin/scoop"]
+            self.assertEqual("/usr/bin/scoop", utils.which("scoop", context))
+            which_mock.assert_has_calls(
+                [
+                    call("scoop", path=fake_venv_bin),
+                    call("scoop"),
+                ]
+            )
+
+        with self.subTest("not found"):
+            which_mock.side_effect = None
+            which_mock.return_value = None
+            self.assertEqual("frobfrob", utils.which("frobfrob", context))
+            which_mock.assert_has_calls(
+                [
+                    call("frobfrob", path=fake_venv_bin),
+                    call("frobfrob"),
+                ]
+            )
 
     def test_version_match(self) -> None:
         test_data: Tuple[Tuple[str, List[Version]], ...] = (

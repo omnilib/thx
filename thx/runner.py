@@ -4,12 +4,9 @@
 import asyncio
 import logging
 import os
-import platform
 import shlex
-import shutil
 from asyncio.subprocess import PIPE
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 from .types import (
@@ -22,26 +19,9 @@ from .types import (
     Step,
     StrPath,
 )
+from .utils import venv_bin_path, which
 
 LOG = logging.getLogger(__name__)
-
-
-def venv_bin_path(context: Context) -> Path:
-    if platform.system() == "Windows":
-        bin_path = context.venv / "Scripts"
-    else:
-        bin_path = context.venv / "bin"
-    return bin_path
-
-
-def which(name: str, context: Context) -> str:
-    bin_path = venv_bin_path(context).as_posix()
-    binary = shutil.which(name, path=bin_path)
-    if binary is None:
-        binary = shutil.which(name)
-        if binary is None:
-            return name
-    return binary
 
 
 def render_command(run: str, context: Context, config: Config) -> Sequence[str]:
@@ -58,7 +38,7 @@ async def run_command(
     new_env: Optional[Dict[str, str]] = None
     if context:
         new_env = os.environ.copy()
-        new_env["PATH"] = f"{venv_bin_path(context)}{os.pathsep}{new_env['PATH']}"
+        new_env["PATH"] = f"{venv_bin_path(context.venv)}{os.pathsep}{new_env['PATH']}"
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=PIPE, stderr=PIPE, env=new_env
     )

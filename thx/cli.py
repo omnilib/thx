@@ -4,6 +4,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, cast, Dict, List, Optional
 
 from rich.console import Group
@@ -13,6 +14,7 @@ from rich.tree import Tree
 
 from .types import (
     Context,
+    ContextEvent,
     Event,
     Fail,
     Job,
@@ -30,7 +32,7 @@ LOG = logging.getLogger(__name__)
 
 @dataclass
 class RichRenderer:
-    venvs: Dict[Context, Event] = field(default_factory=dict)
+    venvs: Dict[Path, ContextEvent] = field(default_factory=dict)
     latest: Dict[Job, Dict[Context, Dict[Step, Event]]] = field(
         default_factory=lambda: defaultdict(lambda: defaultdict(dict))
     )
@@ -66,7 +68,7 @@ class RichRenderer:
             return
 
         if isinstance(event, (VenvCreate, VenvError, VenvReady)):
-            venvs[event.context] = event
+            venvs[event.context.venv] = event
         elif isinstance(event, JobEvent):
             step = event.step
             job = step.job
@@ -76,7 +78,8 @@ class RichRenderer:
 
         if venvs and not all(isinstance(v, VenvReady) for v in venvs.values()):
             tree = Tree("Preparing virtualenvs...")
-            for context, event in venvs.items():
+            for _, event in venvs.items():
+                context = event.context
                 if isinstance(event, VenvReady):
                     text = Text(f"{context.python_version}> done", style="green")
                 elif isinstance(event, VenvError):

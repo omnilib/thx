@@ -24,6 +24,7 @@ from ..types import (
     VenvReady,
     Version,
 )
+from ..utils import venv_bin_path
 
 TEST_VERSIONS = [
     Version(v)
@@ -228,9 +229,10 @@ class ContextTest(TestCase):
 
                 with self.subTest(version):
                     venv = context.venv_path(config, version)
-                    (venv / "bin").mkdir(parents=True, exist_ok=True)
+                    bin_dir = venv_bin_path(venv)
+                    bin_dir.mkdir(parents=True, exist_ok=True)
 
-                    expected = venv / "bin" / "python"
+                    expected = bin_dir / "python"
                     result, _ = context.find_runtime(version, venv)
                     self.assertEqual(expected, result)
 
@@ -238,11 +240,10 @@ class ContextTest(TestCase):
                         [
                             call(
                                 "python",
-                                path=(venv / "bin").as_posix(),
+                                path=bin_dir.as_posix(),
                             ),
                         ]
                     )
-                    runtime_mock.assert_not_called()
 
     @patch("thx.context.find_runtime")
     def test_resolve_contexts_no_config(self, runtime_mock: Mock) -> None:
