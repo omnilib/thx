@@ -80,12 +80,13 @@ def find_runtime(
 ) -> Tuple[Optional[Path], Optional[Version]]:
     if venv and venv.is_dir():
         bin_dir = venv_bin_path(venv)
-        if bin_dir.is_dir():
-            binary_path_str = shutil.which("python", path=f"{bin_dir.as_posix()}")
-            if binary_path_str:
-                binary_path = Path(binary_path_str)
-                binary_version = runtime_version(binary_path)
-                return binary_path, binary_version
+        LOG.debug("looking for runtime in venv %s", bin_dir)
+        binary_path_str = shutil.which("python", path=bin_dir.as_posix())
+        if binary_path_str:
+            binary_path = Path(binary_path_str)
+            binary_version = runtime_version(binary_path)
+            LOG.debug("found venv runtime %s", binary_path)
+            return binary_path, binary_version
 
     # TODO: better way to find specific micro/pre/post versions?
     binary_names = [
@@ -211,9 +212,13 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
                     ]
                 )
 
-            new_python_path, _ = find_runtime(context.python_version, context.venv)
+            new_python_path, new_python_version = find_runtime(
+                context.python_version, context.venv
+            )
             assert new_python_path is not None
+            assert new_python_version is not None
             context.python_path = new_python_path
+            context.python_version = new_python_version
 
             # upgrade pip
             yield VenvCreate(context, message="upgrading pip")
