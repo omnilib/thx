@@ -174,6 +174,7 @@ class ThxWatchdogHandler(FileSystemEventHandler):
         ".mypy_cache",
         ".coverage*",
         "*.swp",
+        ".thx",
     ]
 
     def __init__(
