@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 import logging
+import os
 import platform
 import re
 import shutil
@@ -196,7 +197,12 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
             if context.live:
                 import venv
 
-                venv.create(context.venv, prompt=prompt, with_pip=True)
+                venv.create(
+                    context.venv,
+                    prompt=prompt,
+                    with_pip=True,
+                    symlinks=(os.name != "nt"),
+                )
 
             else:
                 await check_command(
