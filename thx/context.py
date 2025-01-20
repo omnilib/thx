@@ -245,7 +245,7 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
                 proj = f"{config.root}[{','.join(config.extras)}]"
             else:
                 proj = str(config.root)
-            await check_command([pip, "install", "-U", proj])
+            await check_command([pip, "install", "--editable", proj])
 
             # timestamp marker
             content = f"{time.time_ns()}\n"
