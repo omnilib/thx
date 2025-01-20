@@ -421,7 +421,9 @@ class ContextTest(TestCase):
     async def test_prepare_virtualenv_live(
         self, which_mock: Mock, run_mock: Mock
     ) -> None:
-        async def fake_check_command(cmd: Sequence[StrPath]) -> CommandResult:
+        async def fake_check_command(
+            cmd: Sequence[StrPath], context: Optional[Context] = None
+        ) -> CommandResult:
             return CommandResult(0, "", "")
 
         run_mock.side_effect = fake_check_command
