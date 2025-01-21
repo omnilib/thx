@@ -10,7 +10,7 @@ from functools import wraps
 from itertools import zip_longest
 from pathlib import Path
 from time import monotonic_ns
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, TypeVar
 
 from typing_extensions import ParamSpec
 
@@ -130,7 +130,7 @@ def which(name: str, context: Context) -> str:
     return binary
 
 
-def version_match(versions: List[Version], target: Version) -> List[Version]:
+def version_match(versions: Iterable[Version], target: Version) -> List[Version]:
     matches: List[Version] = []
     for version in versions:
         if all(

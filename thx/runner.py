@@ -39,6 +39,7 @@ async def run_command(
     if context:
         new_env = os.environ.copy()
         new_env["PATH"] = f"{venv_bin_path(context.venv)}{os.pathsep}{new_env['PATH']}"
+        new_env["VIRTUAL_ENV"] = str(context.venv)
     proc = await asyncio.create_subprocess_exec(
         *cmd, stdout=PIPE, stderr=PIPE, env=new_env
     )
@@ -51,8 +52,10 @@ async def run_command(
     )
 
 
-async def check_command(command: Sequence[StrPath]) -> CommandResult:
-    result = await run_command(command)
+async def check_command(
+    command: Sequence[StrPath], context: Optional[Context] = None
+) -> CommandResult:
+    result = await run_command(command, context)
 
     if result.error:
         raise CommandError(command, result)

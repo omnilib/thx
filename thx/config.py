@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 import tomli
 from trailrunner.core import project_root
 
-from .types import Config, ConfigError, Job, Version
+from .types import Builder, Config, ConfigError, Job, Version
 
 
 def ensure_dict(value: Any, key: str) -> Dict[str, Any]:
@@ -134,6 +134,15 @@ def load_config(path: Optional[Path] = None) -> Config:
     content = pyproject.read_text()
     data = tomli.loads(content).get("tool", {}).get("thx", {})
 
+    try:
+        builder_str = data.pop("builder", Builder.AUTO.value)
+        builder = Builder(builder_str)
+    except ValueError:
+        raise ConfigError(
+            f"Option tool.thx.builder: invalid value {builder_str!r}; "
+            f"expected one of {', '.join(b.value for b in Builder)}"
+        )
+
     default: List[str] = ensure_listish(data.pop("default", None), "tool.thx.default")
     jobs: List[Job] = parse_jobs(data.pop("jobs", {}))
     versions: List[Version] = sorted(
@@ -170,6 +179,7 @@ def load_config(path: Optional[Path] = None) -> Config:
             requirements=requirements,
             extras=extras,
             watch_paths=watch_paths,
+            builder=builder,
         )
     )
 

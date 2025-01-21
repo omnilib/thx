@@ -2,6 +2,7 @@
 # Licensed under the MIT License
 
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from shlex import quote
 from typing import (
@@ -66,6 +67,12 @@ class Job:
         self.requires = tuple(r.casefold() for r in self.requires)
 
 
+class Builder(Enum):
+    PIP = "pip"
+    UV = "uv"
+    AUTO = "auto"
+
+
 @dataclass
 class Config:
     root: Path = field(default_factory=Path.cwd)
@@ -76,6 +83,7 @@ class Config:
     requirements: Sequence[str] = field(default_factory=list)
     extras: Sequence[str] = field(default_factory=list)
     watch_paths: Set[Path] = field(default_factory=set)
+    builder: Builder = Builder.AUTO
 
     def __post_init__(self) -> None:
         self.default = tuple(d.casefold() for d in self.default)
@@ -84,8 +92,9 @@ class Config:
 @dataclass(unsafe_hash=True)
 class Context:
     python_version: Version
-    python_path: Path
+    python_path: Optional[Path]
     venv: Path
+    builder: Builder = Builder.PIP
     live: bool = False
 
 
