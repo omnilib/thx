@@ -387,7 +387,7 @@ class ContextTest(TestCase):
             venv = tdp / ".thx" / "venv" / "3.9"
             venv.mkdir(parents=True)
 
-            identity_mock.return_value = (Version("3.9.21"), venv / 'bin/python3.9')
+            identity_mock.return_value = (Version("3.9.21"), venv / "bin/python3.9")
 
             config = Config(root=tdp, extras=["more"])
             ctx = Context(Version("3.9"), venv / "bin" / "python", venv)

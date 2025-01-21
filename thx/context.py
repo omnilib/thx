@@ -353,9 +353,7 @@ async def prepare_virtualenv_pip(
             )
 
         # Update runtime in context
-        context.new_python_path, context.new_python_version = identify_venv(
-            context.venv
-        )
+        context.python_path, context.python_version = identify_venv(context.venv)
 
         # Upgrade pip, setuptools
         yield VenvCreate(context, message="upgrading pip")
@@ -407,7 +405,7 @@ async def prepare_virtualenv_uv(
         # Create the venv with uv
         uv = shutil.which("uv")
         if not uv:
-            raise CommandError("uv not found on PATH, cannot build with uv")
+            raise ConfigError("uv not found on PATH, cannot build with uv")
 
         await check_command(
             [
@@ -418,15 +416,13 @@ async def prepare_virtualenv_uv(
                 (
                     str(context.python_path)
                     if context.python_path
-                    else context.python_version
+                    else str(context.python_version)
                 ),
                 str(context.venv),
             ]
         )
 
-        context.new_python_path, context.new_python_version = identify_venv(
-            context.venv
-        )
+        context.python_path, context.python_version = identify_venv(context.venv)
 
         # Install requirements
         requirements = project_requirements(config)
