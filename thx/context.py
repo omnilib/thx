@@ -15,10 +15,12 @@ from typing import AsyncIterator, Dict, List, Optional, Sequence, Tuple
 
 from aioitertools.asyncio import as_generated
 
-from .runner import check_command, CommandError
+from .runner import check_command
 from .types import (
     Builder,
+    CommandError,
     Config,
+    ConfigError,
     Context,
     Event,
     Options,
@@ -120,6 +122,57 @@ def find_runtime(
     return None, None
 
 
+def identify_venv(venv_path: Path) -> Tuple[Path, Version]:
+    """Read the pyvenv.cfg from a venv to determine the Python version.
+
+    Return a path to the Python interpreter and the version of that interpreter.
+    """
+    cfg = venv_path / "pyvenv.cfg"
+
+    try:
+        f = cfg.open()
+    except FileNotFoundError:
+        raise ConfigError(f"venv {venv_path} is missing pyvenv.cfg.") from None
+
+    # Canonical parsing of pyvenv.cfg is here:
+    # https://github.com/python/cpython/blob/e65a1eb93ae35f9fbab1508606e3fbc89123629f/Modules/getpath.py#L372
+    # The file is a simple key=value format and any lines that are malformed
+    # are ignored.
+    VERSION_KEYS = (
+        "version_info",  # uv
+        "version",  # venv
+    )
+    kvs = {}
+    version = None
+    with f:
+        for line in f:
+            key, eq, value = line.partition("=")
+            if eq and key.strip().lower() in VERSION_KEYS:
+                version = Version(value.strip())
+                break
+            elif eq:
+                kvs[key.strip()] = value.strip()
+
+    if version is None:
+        raise ConfigError(
+            f"pyvenv.cfg in venv {venv_path} does not contain version: {kvs}"
+        )
+
+    bin_dir = venv_bin_path(venv_path)
+    candidates = [
+        f"python{version.major}.{version.minor}",
+        f"python{version.major}",
+        "python",
+    ]
+    for candidate in candidates:
+        python_path = bin_dir / candidate
+        if python_path.exists():
+            break
+    else:
+        raise ConfigError(f"venv {venv_path} does not contain a Python interpreter")
+    return python_path, version
+
+
 @timed("resolve contexts")
 def resolve_contexts(config: Config, options: Options) -> List[Context]:
     """
@@ -144,9 +197,13 @@ def resolve_contexts(config: Config, options: Options) -> List[Context]:
     if builder == Builder.UV:
         # If using uv we can let uv resolve the Python path for each version,
         # which may involve installing a new Python version.
+
+        versions = config.versions
+        if options.python is not None:
+            versions = version_match(config.versions, options.python)
         return [
             Context(version, None, venv_path(config, version), builder)
-            for version in config.versions
+            for version in versions
         ]
 
     contexts: List[Context] = []
@@ -238,7 +295,7 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
         elif builder == Builder.PIP:
             task = prepare_virtualenv_pip(context, config)
         else:
-            raise CommandError(f"Unknown builder: {builder}")
+            raise ConfigError(f"Unknown builder: {builder}")
         async for event in task:
             yield event
     else:
@@ -247,9 +304,12 @@ async def prepare_virtualenv(context: Context, config: Config) -> AsyncIterator[
 
 
 def determine_builder(config: Config) -> Builder:
-    """
-    Decide which builder to use (pip, uv, or auto).
-    If builder=auto, pick uv if available, else pip.
+    """Resolve which builder to use.
+
+    If a builder is explicitly configured, attempt to use it (and fail if it
+    is unavailable.)
+
+    If builder is auto, pick uv if available, else pip.
     """
     uv = shutil.which("uv")
     if config.builder == Builder.AUTO:
@@ -258,16 +318,14 @@ def determine_builder(config: Config) -> Builder:
         return Builder.PIP
     if config.builder == Builder.UV:
         if uv is None:
-            raise CommandError("uv not found on PATH, cannot build with uv")
+            raise ConfigError("uv not found on PATH, cannot build with uv")
     return config.builder
 
 
 async def prepare_virtualenv_pip(
     context: Context, config: Config
 ) -> AsyncIterator[Event]:
-    """
-    Create and populate a virtual environment using the stdlib venv + pip commands.
-    """
+    """Create and populate a venv using venv and pip."""
     try:
         # Create the venv
         if context.live:
@@ -280,6 +338,9 @@ async def prepare_virtualenv_pip(
                 symlinks=(os.name != "nt"),
             )
         else:
+            assert (
+                context.python_path is not None
+            ), "python_path must be resolved for non-live venv with pip"
             await check_command(
                 [
                     context.python_path,
@@ -292,11 +353,9 @@ async def prepare_virtualenv_pip(
             )
 
         # Update runtime in context
-        new_python_path, new_python_version = find_runtime(
-            context.python_version, context.venv
+        context.new_python_path, context.new_python_version = identify_venv(
+            context.venv
         )
-        context.python_path = new_python_path or context.python_path
-        context.python_version = new_python_version or context.python_version
 
         # Upgrade pip, setuptools
         yield VenvCreate(context, message="upgrading pip")
@@ -343,9 +402,7 @@ async def prepare_virtualenv_pip(
 async def prepare_virtualenv_uv(
     context: Context, config: Config
 ) -> AsyncIterator[Event]:
-    """
-    Create and populate a virtual environment using `uv venv` plus `uv pip install`.
-    """
+    """Create and populate a venv using uv."""
     try:
         # Create the venv with uv
         uv = shutil.which("uv")
@@ -365,6 +422,10 @@ async def prepare_virtualenv_uv(
                 ),
                 str(context.venv),
             ]
+        )
+
+        context.new_python_path, context.new_python_version = identify_venv(
+            context.venv
         )
 
         # Install requirements

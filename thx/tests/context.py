@@ -4,6 +4,7 @@
 import asyncio
 import platform
 import subprocess
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import AsyncIterator, List, Optional, Sequence, Tuple
@@ -14,6 +15,7 @@ from thx.tests.helper import async_test
 
 from .. import context
 from ..types import (
+    Builder,
     CommandResult,
     Config,
     Context,
@@ -249,14 +251,15 @@ class ContextTest(TestCase):
     def test_resolve_contexts_no_config(self, runtime_mock: Mock) -> None:
         with TemporaryDirectory() as td:
             tdp = Path(td).resolve()
-            config = Config(root=tdp)
+            config = Config(root=tdp, builder=Builder.PIP)
             active_version = Version(platform.python_version())
             expected = [
                 Context(
                     active_version,
-                    Path(""),
+                    Path(sys.executable),
                     context.venv_path(config, active_version),
                     live=True,
+                    builder=Builder.PIP,
                 )
             ]
             result = context.resolve_contexts(config, Options())
@@ -270,7 +273,7 @@ class ContextTest(TestCase):
     ) -> None:
         with TemporaryDirectory() as td:
             tdp = Path(td).resolve()
-            config = Config(root=tdp, versions=TEST_VERSIONS)
+            config = Config(root=tdp, versions=TEST_VERSIONS, builder=Builder.PIP)
 
             expected_venvs = {
                 version: context.venv_path(config, version) for version in TEST_VERSIONS
@@ -366,9 +369,10 @@ class ContextTest(TestCase):
 
     @patch("thx.context.check_command")
     @patch("thx.context.which")
+    @patch("thx.context.identify_venv")
     @async_test
     async def test_prepare_virtualenv_extras(
-        self, which_mock: Mock, run_mock: Mock
+        self, identity_mock: Mock, which_mock: Mock, run_mock: Mock
     ) -> None:
         self.maxDiff = None
 
@@ -382,6 +386,8 @@ class ContextTest(TestCase):
             tdp = Path(td).resolve()
             venv = tdp / ".thx" / "venv" / "3.9"
             venv.mkdir(parents=True)
+
+            identity_mock.return_value = (Version("3.9.21"), venv / 'bin/python3.9')
 
             config = Config(root=tdp, extras=["more"])
             ctx = Context(Version("3.9"), venv / "bin" / "python", venv)
@@ -434,7 +440,7 @@ class ContextTest(TestCase):
             reqs = tdp / "requirements.txt"
             reqs.write_text("\n")
 
-            config = Config(root=tdp)
+            config = Config(root=tdp, builder=Builder.PIP)
             ctx = context.resolve_contexts(config, Options(live=True))[0]
             self.assertTrue(ctx.live)
 
