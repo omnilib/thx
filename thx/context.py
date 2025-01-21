@@ -46,8 +46,9 @@ def venv_path(config: Config, version: Version) -> Path:
 
 
 def runtime_version(binary: Path) -> Optional[Version]:
-    """
-    Run `binary -V` and parse out the Python version string. Cache the result to avoid repeated calls.
+    """Load the version printed by the given Python interpreter.
+
+    Cache the result to avoid repeated calls.
     """
     if binary not in PYTHON_VERSIONS:
         try:
@@ -175,9 +176,10 @@ def identify_venv(venv_path: Path) -> Tuple[Path, Version]:
 
 @timed("resolve contexts")
 def resolve_contexts(config: Config, options: Options) -> List[Context]:
-    """
-    Turn each configured Python version into a Context with a local or discovered Python path.
-    If options.live is set or no versions are configured, we just use the host Python version.
+    """Build a list of contexts in which to run.
+
+    We evaluate the list of Python versions from config, as well as
+    command-line options refining the list.
     """
     builder = determine_builder(config)
 
@@ -235,9 +237,10 @@ def resolve_contexts(config: Config, options: Options) -> List[Context]:
 
 
 def project_requirements(config: Config) -> Sequence[Path]:
-    """
-    Return a list of requirements file paths, either from config.requirements or discovered
-    (i.e. requirements*.txt).
+    """Return a list of requirements file paths for the project.
+
+    If config.requirements is given, use those paths. Otherwise, search for
+    requirements*.txt files in the project root.
     """
     paths: List[Path] = []
     if config.requirements:
