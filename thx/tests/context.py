@@ -411,7 +411,7 @@ class ContextTest(TestCase):
                             "setuptools",
                         ]
                     ),
-                    call([pip, "install", "-U", str(config.root) + "[more]"]),
+                    call([pip, "install", "--editable", str(config.root) + "[more]"]),
                 ],
             )
 
@@ -457,7 +457,7 @@ class ContextTest(TestCase):
                         ]
                     ),
                     call([pip, "install", "-U", "-r", reqs]),
-                    call([pip, "install", "-U", str(config.root)]),
+                    call([pip, "install", "--editable", str(config.root)]),
                 ]
             )
 
