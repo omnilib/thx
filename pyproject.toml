@@ -1,5 +1,5 @@
 [build-system]
-requires = ["flit_core >=3,<4"]
+requires = ["flit_core >=3.8,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
@@ -41,6 +41,7 @@ dev = [
 
     "attribution==1.7.1",
     "black==24.4.2",
+    "build>=1.2",
     "coverage==7.5.3",
     "flit==3.9.0",
     "flake8==7.0.0",
