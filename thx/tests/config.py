@@ -72,6 +72,16 @@ class ConfigTest(TestCase):
             result = load_config(td)
             self.assertEqual(expected, result)
 
+    def test_broken_config(self) -> None:
+        with fake_pyproject(
+            """
+            [tool.black]
+            line_length = 37[]  # should cause parse failure
+            """
+        ) as td:
+            with self.assertRaisesRegex(ConfigError, "failure parsing pyproject.toml"):
+                load_config(td)
+
     def test_empty_config(self) -> None:
         with fake_pyproject(
             """
