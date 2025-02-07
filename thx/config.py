@@ -132,7 +132,10 @@ def load_config(path: Optional[Path] = None) -> Config:
         return Config(root=path)
 
     content = pyproject.read_text()
-    data = tomli.loads(content).get("tool", {}).get("thx", {})
+    try:
+        data = tomli.loads(content).get("tool", {}).get("thx", {})
+    except tomli.TOMLDecodeError as error:
+        raise ConfigError(f"failure parsing {pyproject}: {error}") from error
 
     default: List[str] = ensure_listish(data.pop("default", None), "tool.thx.default")
     jobs: List[Job] = parse_jobs(data.pop("jobs", {}))
