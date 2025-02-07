@@ -79,7 +79,9 @@ class ConfigTest(TestCase):
             line_length = 37[]  # should cause parse failure
             """
         ) as td:
-            with self.assertRaisesRegex(ConfigError, "failure parsing pyproject.toml"):
+            with self.assertRaisesRegex(
+                ConfigError, r"failure parsing .*pyproject\.toml"
+            ):
                 load_config(td)
 
     def test_empty_config(self) -> None:
