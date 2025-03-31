@@ -40,7 +40,7 @@ dev = [
     "watchdog==4.0.1",
 
     "attribution==1.7.1",
-    "black==24.4.2",
+    "black==25.1.0",
     "build>=1.2",
     "coverage==7.5.3",
     "flit==3.12.0",
