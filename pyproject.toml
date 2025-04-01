@@ -30,7 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "aioitertools==v0.11.0",
+    "aioitertools==v0.12.0",
     "click==8.1.7",
     "packaging==24.2",
     "rich==13.7.1",
