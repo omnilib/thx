@@ -34,7 +34,7 @@ dev = [
     "click==8.1.7",
     "packaging==24.2",
     "rich==13.7.1",
-    "tomli==2.0.1",
+    "tomli==2.2.1",
     "trailrunner==1.4.0",
     "typing_extensions == 4.12.0",
     "watchdog==4.0.1",
