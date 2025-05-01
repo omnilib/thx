@@ -50,7 +50,7 @@ dev = [
     "usort==1.0.8.post1",
 ]
 docs = [
-    "sphinx==7.3.7; python_version > '3.8'",
+    "sphinx==7.4.7; python_version > '3.8'",
     "sphinx-mdinclude==0.6.1",
 ]
 
